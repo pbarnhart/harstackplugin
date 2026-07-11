@@ -215,6 +215,18 @@ check('cmpNames carries the cookie-detected vendor', (r6.analysis.cmpNames || []
 // generic consent cookie (har4) must NOT be vendor-attributed
 check('generic consent cookie stays unrecognized, not cookie_only', a4.cmpStatus === 'unrecognized');
 
+// ── Operator-related: same brand label on a different TLD (cnn.com vs
+//    cnn.io) must classify as operator-related, not unidentified ────────
+const har7 = { log: { version: '1.2', pages: [{ id: 'p1', title: 'https://www.cnn.com/' }], entries: [
+  entry('https://www.cnn.com/', 'GET'),
+  entry('https://registry.api.cnn.io/v1/reg', 'GET'),
+] } };
+const r7 = E.analyzeHAR(har7, { firstPartyDomain: 'www.cnn.com', gpcReported: false });
+check('same-label different-TLD domain is operator-related',
+  (r7.analysis.operatorRelatedDomains || []).some(d => /cnn\.io/.test(d.domain)));
+check('operator-related domain kept out of unidentified list',
+  !(r7.analysis.unidentifiedThirdParties || []).some(d => /cnn\.io/.test(d.domain)));
+
 // Live-page consent APIs alone (extension probe) also flip the status
 const har5 = JSON.parse(JSON.stringify(har3));
 const r5 = E.analyzeHAR(har5, { firstPartyDomain: 'app.cleansite.dev', gpcReported: false,

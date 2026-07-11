@@ -2345,9 +2345,21 @@ function analyzeHAR(h, bizProfile, liveCtx) {
   // noise in the audit.
   const fpStem = firstPartyDomain ? firstPartyDomain.split('.')[0].toLowerCase() : null;
   const isOperatorRelated = (dom) => {
-    if (!fpStem || fpStem.length < 4) return false; // too short to match safely
+    if (!fpStem) return false;
     const reg = (getRegistrableDomain(dom) || '').toLowerCase();
-    const regStem = reg.split('.')[0];
+    if (!reg) return false;
+    const parts = reg.split('.');
+    const regStem = parts[0];
+    const tld = parts[parts.length - 1];
+    // Same brand label on a different TLD (cnn.com vs cnn.io). Exact label
+    // equality is safe at any stem length; substring matching is not.
+    if (regStem === fpStem && reg !== firstPartyDomain) return true;
+    // Brand gTLD: the operator's own TLD spells the brand (foxnews.com vs
+    // atp.fox). Fires only when the first-party stem starts with the TLD
+    // and the TLD is not a generic suffix.
+    const GENERIC_TLDS = ['com','net','org','io','co','ai','tv','app','dev','me','us','uk','ca','de','fr','au','info','biz','xyz','online','site','live','cloud','digital','media','news'];
+    if (tld.length >= 3 && GENERIC_TLDS.indexOf(tld) === -1 && fpStem.startsWith(tld)) return true;
+    if (fpStem.length < 4) return false; // too short to substring-match safely
     return regStem.includes(fpStem) || dom.toLowerCase().includes(fpStem);
   };
 

@@ -60,7 +60,7 @@ Findings include citations to specific regulations and enforcement actions:
 
 ## Tracker Registry
 
-The tool includes 278 URL signature entries across:
+The tool includes 336 URL signature entries across:
 
 - Advertising (Meta, Google, TikTok, Reddit, Microsoft, DoubleClick)
 - Session Replay (Clarity, Hotjar, FullStory, LogRocket, Mouseflow)
@@ -163,7 +163,7 @@ Open DevTools, select the **HARstack** panel, browse, press **Analyze**.
 ```
 build/
   build.py            # single build script -> classic, wizard, extension engine
-  trackers.yaml       # authoritative tracker registry (278 entries)
+  trackers.yaml       # authoritative tracker registry (336 entries)
   citations.json      # regulatory citation map
   source/             # harstack-source.html (the engine + UI source)
   wizard-body.html    # wizard wrapper template
