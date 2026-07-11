@@ -191,6 +191,30 @@ check('finding suggests the two-capture enforcement test', !!cmpF4 && /consent d
 check('unrecognized CMP does not add the no-CMP review reason',
   !(a4.outcome.reasons || []).some(w => /no recognized consent management/i.test(w)));
 
+// ── CMP detected by cookie signature when its script is not in the
+//    capture (cached script / late capture start). Modeled on a real
+//    Osano site whose capture held only the CMP's cookies ──────────────
+const har6 = { log: { version: '1.2', pages: [{ id: 'p1', title: 'https://www.cachedcmp.example/' }], entries: [
+  entry('https://www.cachedcmp.example/', 'GET',
+        [{ name: 'Cookie', value: 'osano_consentmanager_uuid=abc-123; osano_consentmanager=base64stuff; other=1' }]),
+  entry('https://bat.bing.com/bat.js', 'GET'),
+  entry('https://e.clarity.ms/collect', 'POST'),
+] } };
+
+let r6;
+try { r6 = E.analyzeHAR(har6, { firstPartyDomain: 'www.cachedcmp.example', gpcReported: false }); }
+catch (e) { console.error('THREW (cached cmp):', e && e.stack || e); process.exit(1); }
+const cmpF6 = r6.analysis.findings.find(f => f.type === 'cmp');
+check('cmpStatus is cookie_only for cached CMP', r6.analysis.cmpStatus === 'cookie_only');
+check('CMP named from cookie signature (Osano)', !!cmpF6 && /Osano/.test(cmpF6.title));
+check('cookie_only finding is low severity', !!cmpF6 && cmpF6.sev === 'low');
+check('cookie_only finding says script not in capture', !!cmpF6 && /script not in capture/i.test(cmpF6.title));
+check('cookie_only recommends full-load recapture', !!cmpF6 && /Reload & Capture|full page load/i.test(cmpF6.action || ''));
+check('cmpNames carries the cookie-detected vendor', (r6.analysis.cmpNames || []).indexOf('Osano') > -1);
+
+// generic consent cookie (har4) must NOT be vendor-attributed
+check('generic consent cookie stays unrecognized, not cookie_only', a4.cmpStatus === 'unrecognized');
+
 // Live-page consent APIs alone (extension probe) also flip the status
 const har5 = JSON.parse(JSON.stringify(har3));
 const r5 = E.analyzeHAR(har5, { firstPartyDomain: 'app.cleansite.dev', gpcReported: false,

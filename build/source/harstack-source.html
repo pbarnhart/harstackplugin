@@ -2052,12 +2052,33 @@ function detectHARSanitization(entries) {
 // Consent Mode gcs= params). None of these identify the vendor; all of
 // them prove a consent mechanism exists. Used only when no registry CMP
 // matched, to separate "no consent mechanism" from "unrecognized one".
+// Vendor-attributable CMP cookie signatures. URL matching misses a CMP whose
+// script came from browser cache or loaded before the capture started; its
+// cookies still name it. Only unambiguous vendor cookies belong here --
+// generic strings (euconsent-v2, usprivacy) stay anonymous artifacts.
+const CMP_COOKIE_SIGNATURES = [
+  { re: /^osano_consentmanager/i, vendor: 'Osano' },
+  { re: /^optanon(consent|alertboxclosed)/i, vendor: 'OneTrust' },
+  { re: /^CookieConsent$/i, vendor: 'Cookiebot' },
+  { re: /^CookieScriptConsent$/i, vendor: 'Cookie-Script' },
+  { re: /^didomi_token$/i, vendor: 'Didomi' },
+  { re: /^axeptio_/i, vendor: 'Axeptio' },
+  { re: /^cmplz_/i, vendor: 'Complianz' },
+  { re: /^moove_gdpr_popup$/i, vendor: 'GDPR Cookie Compliance (WordPress)' },
+  { re: /^(cookieyes-consent|cky-consent)/i, vendor: 'CookieYes' },
+  { re: /^_iub_cs/i, vendor: 'iubenda' },
+  { re: /^_swb/i, vendor: 'Ketch' },
+  { re: /^usercentrics/i, vendor: 'Usercentrics' },
+  { re: /^truste\.consent/i, vendor: 'TrustArc' },
+  { re: /^notice_(behavior|preferences|gdpr_prefs)/i, vendor: 'TrustArc' },
+];
+
 function detectConsentArtifacts(entries) {
   const IAB_PARAM_RE = /[?&](us_privacy|usprivacy|gpp|gpp_sid|gdpr_consent|euconsent)=([^&#]{2,})/i;
   const GCS_RE = /[?&]gcs=(G1[0-9-]{2})/;
-  const CONSENT_COOKIE_RE = /^\s*(usprivacy|us_privacy|euconsent(-v2)?|__gpp|[a-z0-9_-]*consent[a-z0-9_-]*|cookie[_-]?(prefs?|preferences|choice|choices|notice|control|law|banner|policy)[a-z0-9_-]*|cc_cookie|cmplz_[a-z0-9_]+|moove_gdpr_popup|gdpr[a-z0-9_-]*|ccpa[a-z0-9_-]*|privacy[_-]?(settings|optout|opt_out|prefs?)|opt[_-]?(out|in)[a-z0-9_-]*)\s*=/i;
+  const CONSENT_COOKIE_RE = /^\s*(usprivacy|us_privacy|euconsent(-v2)?|__gpp|[a-z0-9_-]*consent[a-z0-9_-]*|cookie[_-]?(prefs?|preferences|choice|choices|notice|control|law|banner|policy)[a-z0-9_-]*|cc_cookie|cmplz_[a-z0-9_]+|moove_gdpr_popup|gdpr[a-z0-9_-]*|ccpa[a-z0-9_-]*|privacy[_-]?(settings|optout|opt_out|prefs?)|opt[_-]?(out|in)[a-z0-9_-]*|_swb[a-z0-9_-]*|_iub_cs[a-z0-9_-]*|notice_(behavior|preferences|gdpr_prefs)|truste\.consent[a-z0-9_.-]*)\s*=/i;
 
-  const iabParams = new Set(), consentCookies = new Set();
+  const iabParams = new Set(), consentCookies = new Set(), cmpVendors = new Set();
   let gcsSeen = false;
 
   entries.forEach(e => {
@@ -2066,23 +2087,28 @@ function detectConsentArtifacts(entries) {
     if (m) iabParams.add(m[1].toLowerCase());
     if (GCS_RE.test(url)) gcsSeen = true;
 
+    const noteCookieName = (name) => {
+      consentCookies.add(name);
+      CMP_COOKIE_SIGNATURES.forEach(sig => { if (sig.re.test(name)) cmpVendors.add(sig.vendor); });
+    };
     (e.request?.headers || []).forEach(h => {
       if ((h.name || '').toLowerCase() !== 'cookie') return;
       String(h.value || '').split(';').forEach(part => {
         const cm = part.match(CONSENT_COOKIE_RE);
-        if (cm) consentCookies.add(part.split('=')[0].trim());
+        if (cm) noteCookieName(part.split('=')[0].trim());
       });
     });
     (e.response?.headers || []).forEach(h => {
       if ((h.name || '').toLowerCase() !== 'set-cookie') return;
       const cm = String(h.value || '').match(CONSENT_COOKIE_RE);
-      if (cm) consentCookies.add(String(h.value).split('=')[0].trim());
+      if (cm) noteCookieName(String(h.value).split('=')[0].trim());
     });
   });
 
   return {
     iabParams: [...iabParams],
     consentCookies: [...consentCookies].slice(0, 10),
+    cmpVendors: [...cmpVendors],
     gcsSeen,
     any: iabParams.size > 0 || consentCookies.size > 0 || gcsSeen,
   };
@@ -2536,7 +2562,14 @@ function analyzeHAR(h, bizProfile, liveCtx) {
     const liveApis = (liveCtx && Array.isArray(liveCtx.consentApis)) ? liveCtx.consentApis : [];
     const liveDeclared = !!(liveCtx && liveCtx.declaredConsent && liveCtx.declaredConsent.state);
 
-    if (artifacts.any || liveApis.length > 0 || liveDeclared) {
+    if (artifacts.cmpVendors.length > 0) {
+      // The CMP's cookies name it even though its script never appeared in
+      // the capture (browser cache, capture started after page load, or a
+      // short session). We know WHO; we cannot analyze WHEN it loads.
+      cmpStatus = 'cookie_only';
+      cmpNames = artifacts.cmpVendors.slice();
+      findings.push({type:'cmp',title:`Consent platform detected via cookies: ${artifacts.cmpVendors.join(', ')} (script not in capture)`,sev:'low',regs:['US State Privacy'],confidence:'observed',plain:`Cookies set by ${artifacts.cmpVendors.join(', ')} are present (${artifacts.consentCookies.join(', ')}), which proves the consent platform has run in this browser, but its script does not appear among the ${entries.length} requests captured. Common causes: the script was served from browser cache, the capture started after the page had loaded, or the session was short. Because the script is not in the capture, load-order analysis (does the consent platform fire before tracking tags?) is not possible here.`,action:'Re-capture with the full page load visible: in the extension press Reload & Capture; for a HAR export, disable cache and record from navigation. Then re-run the analysis to verify the consent platform loads before tracking scripts and gates them.'});
+    } else if (artifacts.any || liveApis.length > 0 || liveDeclared) {
       cmpStatus = 'unrecognized';
       const evidence = [];
       if (artifacts.consentCookies.length) evidence.push(`consent cookies (${artifacts.consentCookies.join(', ')})`);
@@ -2699,6 +2732,11 @@ function genAuditQs(findings, trackers, cookies, cmpStatus, cdpEvents=[], sgtmCa
       'Does the custom consent layer read GPC, propagate opt-outs to ad platforms (IAB US Privacy or GPP strings, Google Consent Mode updates, platform-level flags), and retain auditable consent records?',
       'Has enforcement been verified empirically by capturing the page under both consent choices and comparing which trackers fire in each capture?',
     ]});
+  } else if (cmpStatus==='cookie_only') {
+    qs.push({cat:'Consent Management: detected via cookies only',fw:'CCPA/CPRA',qs:[
+      'The consent platform\'s cookies are present but its script was not in this capture, so load order could not be analyzed. Has a full-page-load capture (cache disabled) verified that the CMP fires before all tracking tags?',
+      'Are consent types configured to require affirmative user action (no auto-grant), and are consent records retained and auditable for regulatory inquiry?',
+    ]});
   } else if (cmpStatus==='late') {
     qs.push({cat:'Consent Management: load order issue',fw:'CCPA/CPRA / ECPA',qs:[
       'Has tag manager configuration been audited to verify the CMP fires before all tracking scripts, and is there a QA process to detect load-order regression after tag manager changes?',
@@ -2823,12 +2861,12 @@ function render(findings, a, aqData) {
   const order={high:0,medium:1,low:2,ok:3};
   findings.sort((x,y)=>(order[x.sev]||2)-(order[y.sev]||2));
 
-  const cmpCls = a.cmpStatus==='none'?'cmp-missing':a.cmpStatus==='unrecognized'?'cmp-late':a.cmpStatus==='late'?'cmp-late':'cmp-found';
-  const cmpIc = a.cmpStatus==='none'?'⛔':a.cmpStatus==='unrecognized'?'❓':a.cmpStatus==='late'?'⚠️':'✅';
-  const cmpTit = a.cmpStatus==='none'?'No recognized consent management platform detected':a.cmpStatus==='unrecognized'?'Consent signals present, platform not recognized':a.cmpStatus==='late'?`CMP detected. Loads too late: ${a.cmpNames.join(', ')}`:`Consent platform: ${a.cmpNames.join(', ')}`;
-  const cmpDet = a.cmpStatus==='none'?'No consent platform from the registry appears in this capture, and none of the artifacts a working consent layer leaves behind were found. Either no consent mechanism exists, or a custom layer is neither persisting decisions nor signaling the ad stack. Confirm with the engineering team which one applies.':a.cmpStatus==='unrecognized'?'Consent cookies, IAB privacy strings, or Consent Mode signals are present, but no registry CMP matched. This is consistent with a custom or first-party consent layer. Confirm with engineering that it gates tags before they fire; presence is not proof of enforcement.':a.cmpStatus==='late'?'Tracking scripts fired before the CMP loaded. Visitors are tracked before any consent decision is possible.':'CMP load order appears correct. Verify consent type configuration, GPC detection, and platform opt-out propagation.';
-  const cmpBdg = a.cmpStatus==='none'?'bfail':a.cmpStatus==='unrecognized'?'bwarn':a.cmpStatus==='late'?'bwarn':'bok';
-  const cmpBt = a.cmpStatus==='none'?'NOT RECOGNIZED':a.cmpStatus==='unrecognized'?'UNRECOGNIZED':a.cmpStatus==='late'?'LOAD ORDER ISSUE':'DETECTED';
+  const cmpCls = a.cmpStatus==='none'?'cmp-missing':(a.cmpStatus==='unrecognized'||a.cmpStatus==='cookie_only')?'cmp-late':a.cmpStatus==='late'?'cmp-late':'cmp-found';
+  const cmpIc = a.cmpStatus==='none'?'⛔':a.cmpStatus==='unrecognized'?'❓':a.cmpStatus==='cookie_only'?'🍪':a.cmpStatus==='late'?'⚠️':'✅';
+  const cmpTit = a.cmpStatus==='none'?'No recognized consent management platform detected':a.cmpStatus==='unrecognized'?'Consent signals present, platform not recognized':a.cmpStatus==='cookie_only'?`Consent platform detected via cookies: ${a.cmpNames.join(', ')}`:a.cmpStatus==='late'?`CMP detected. Loads too late: ${a.cmpNames.join(', ')}`:`Consent platform: ${a.cmpNames.join(', ')}`;
+  const cmpDet = a.cmpStatus==='none'?'No consent platform from the registry appears in this capture, and none of the artifacts a working consent layer leaves behind were found. Either no consent mechanism exists, or a custom layer is neither persisting decisions nor signaling the ad stack. Confirm with the engineering team which one applies.':a.cmpStatus==='unrecognized'?'Consent cookies, IAB privacy strings, or Consent Mode signals are present, but no registry CMP matched. This is consistent with a custom or first-party consent layer. Confirm with engineering that it gates tags before they fire; presence is not proof of enforcement.':a.cmpStatus==='cookie_only'?'The consent platform\'s cookies are present but its script is not in this capture (cached, or the capture started after page load). Load-order analysis is not possible. Re-capture from a full page load with cache disabled to verify the CMP fires before tracking tags.':a.cmpStatus==='late'?'Tracking scripts fired before the CMP loaded. Visitors are tracked before any consent decision is possible.':'CMP load order appears correct. Verify consent type configuration, GPC detection, and platform opt-out propagation.';
+  const cmpBdg = a.cmpStatus==='none'?'bfail':(a.cmpStatus==='unrecognized'||a.cmpStatus==='cookie_only')?'bwarn':a.cmpStatus==='late'?'bwarn':'bok';
+  const cmpBt = a.cmpStatus==='none'?'NOT RECOGNIZED':a.cmpStatus==='unrecognized'?'UNRECOGNIZED':a.cmpStatus==='cookie_only'?'RE-CAPTURE TO VERIFY':a.cmpStatus==='late'?'LOAD ORDER ISSUE':'DETECTED';
 
   function regTag(r) {
     const rc=r.toLowerCase().replace(/[^a-z]/g,'');
