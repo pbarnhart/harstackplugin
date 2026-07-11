@@ -3622,3 +3622,809 @@ trackers:
       Confirm Supabase operates as the site's own backend (processor under DPA) and that the privacy
       policy's hosting and subprocessor disclosure covers it. No CMP gating expected for
       infrastructure calls.
+
+  # ── Programmatic adtech coverage pass (June 2026, from a CNN capture) ────
+  # A major news site capture surfaced 76 unidentified third parties; the
+  # attributable ones are added below. SSP/DSP/exchange entries share the
+  # same legal posture: independent advertising controllers performing
+  # cookie or identity syncing, which constitutes "sharing" under CPRA.
+
+  - pattern: "rubiconproject.com"
+    name: "Magnite (Rubicon Project)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Magnite supply-side platform (pixel/eus/token endpoints on rubiconproject.com). Runs auctions
+      for the page's ad inventory and performs cookie and identity syncing with demand partners.
+      Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Magnite by name or category in your privacy policy. Verify CMP suppression on GPC and
+      CCPA opt-out, including the pixel and token sync calls, not just the auction library.
+
+  - pattern: "pubmatic.com"
+    name: "PubMatic"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      PubMatic supply-side platform (hbopenbid, ads, ut, and image pixel-sync endpoints). Runs
+      header-bidding auctions and syncs user identifiers with demand partners. Independent
+      advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose PubMatic in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out,
+      including the image*.pubmatic.com sync pixels.
+
+  - pattern: "indexww.com"
+    name: "Index Exchange"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Index Exchange supply-side platform (js-sec.indexww.com library). Runs real-time auctions and
+      identity syncing across demand partners. Independent advertising controller; constitutes
+      "sharing" under CPRA.
+    action: >-
+      Disclose Index Exchange in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "3lift.com"
+    name: "TripleLift"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      TripleLift native advertising exchange (eb2.3lift.com). Serves native ad units and performs
+      cookie syncing with demand and identity partners. Independent advertising controller;
+      constitutes "sharing" under CPRA.
+    action: >-
+      Disclose TripleLift in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "lijit.com"
+    name: "Sovrn (Lijit)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Sovrn advertising exchange, still served from the legacy lijit.com domain (bb.lijit.com).
+      Auction and cookie-sync traffic. Independent advertising controller; constitutes "sharing"
+      under CPRA.
+    action: >-
+      Disclose Sovrn in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "sharethrough.com"
+    name: "Sharethrough"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Sharethrough native advertising exchange (match.sharethrough.com is the cookie-match
+      endpoint). Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Sharethrough in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "360yield.com"
+    name: "Improve Digital (Azerion)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Improve Digital (Azerion) supply-side platform (match.360yield.com is the cookie-match
+      endpoint). Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Improve Digital/Azerion in your privacy policy. Verify CMP suppression on GPC and
+      CCPA opt-out.
+
+  - pattern: "bidswitch.net"
+    name: "BidSwitch (Criteo)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      BidSwitch (x.bidswitch.net), Criteo-owned routing infrastructure that bridges DSPs and SSPs.
+      Its traffic is almost entirely identifier syncing: one BidSwitch call fans a user identifier
+      out across many buying platforms. Constitutes "sharing" under CPRA.
+    action: >-
+      BidSwitch presence means identifiers are propagating to demand platforms you may have no
+      direct contract with. Inventory which SSP introduced it, disclose the sharing, and verify CMP
+      suppression on GPC and CCPA opt-out.
+
+  - pattern: "adform.net"
+    name: "Adform"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Adform ad server and DSP (c1.adform.net cookie-sync endpoint). Independent advertising
+      controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Adform in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "fwmrm.net"
+    name: "FreeWheel (Comcast)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      FreeWheel video ad server (fwmrm.net), a Comcast company. Decisions and serves video and CTV
+      ad pods and carries viewer identifiers across the Comcast advertising ecosystem. Constitutes
+      "sharing" under CPRA.
+    action: >-
+      Disclose FreeWheel in your privacy policy. Verify consent gating for video ad requests, which
+      often bypass display-oriented CMP configurations.
+
+  - pattern: "tremorhub.com"
+    name: "Nexxen (Tremor Video)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Nexxen (formerly Tremor Video/Unruly) video advertising exchange (publishers.tremorhub.com,
+      partner sync routes). Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Nexxen in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out for
+      video ad requests.
+
+  - pattern: "stackadapt.com"
+    name: "StackAdapt"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      StackAdapt demand-side platform (sync.srv.stackadapt.com is the cookie-sync endpoint).
+      Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose StackAdapt in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "ipredictive.com"
+    name: "Adelphic (Viant)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Adelphic, the Viant demand-side platform (sync.ipredictive.com cookie-sync endpoint). Viant
+      operates a cross-device identity graph. Independent advertising controller; constitutes
+      "sharing" under CPRA.
+    action: >-
+      Disclose Adelphic/Viant in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "sitescout.com"
+    name: "Basis (SiteScout)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Basis Technologies DSP, legacy SiteScout domain (pixel-sync.sitescout.com). Cookie-sync
+      traffic. Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Basis in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "bidr.io"
+    name: "Beeswax (FreeWheel)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Beeswax bidder-as-a-service, now part of FreeWheel/Comcast (match.prod.bidr.io cookie-match
+      endpoint). Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Beeswax/FreeWheel in your privacy policy. Verify CMP suppression on GPC and CCPA
+      opt-out.
+
+  - pattern: "a-mo.net"
+    name: "AMX (Adapt MX)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      AMX real-time advertising exchange (sync.a-mo.net cookie-sync endpoint). Independent
+      advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose AMX in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "ad.turn.com"
+    name: "Nexxen DSP (Turn/Amobee)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Nexxen demand-side platform on the legacy Turn/Amobee domain (ad.turn.com). Cookie syncing
+      and audience targeting. Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Nexxen in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "mediago.io"
+    name: "MediaGo (Baidu)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      MediaGo native advertising DSP operated by Baidu (trace.mediago.io). Behavioral targeting
+      with data flowing to a China-headquartered operator, which may trigger additional
+      cross-border and state-law data transfer review. Constitutes "sharing" under CPRA.
+    action: >-
+      Disclose MediaGo in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out, and
+      have counsel review cross-border transfer posture for a Baidu-operated destination.
+
+  - pattern: "blismedia.com"
+    name: "Blis (Location Advertising)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Blis location-powered advertising (tr.blismedia.com). Location-based audience targeting draws
+      heightened regulatory attention: precise geolocation is sensitive data under CPRA and several
+      state laws, with opt-in rather than opt-out requirements in some jurisdictions.
+    action: >-
+      Determine what location signal Blis receives from this integration (IP-derived vs precise).
+      If precise geolocation is involved, confirm the consent basis meets sensitive-data
+      requirements. Disclose in your privacy policy and verify CMP suppression on GPC and opt-out.
+
+  - pattern: "ctnsnet.com"
+    name: "Crimtan"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Crimtan lifecycle advertising DSP (cm.ctnsnet.com cookie-match endpoint). Independent
+      advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Crimtan in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "bttrack.com"
+    name: "Bidtellect"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Bidtellect native advertising DSP (bttrack.com). Behavioral targeting and cookie syncing.
+      Independent advertising controller; constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Bidtellect in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "cognitivlabs.com"
+    name: "Cognitiv"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Cognitiv deep-learning ad targeting (beacon.lynx.cognitivlabs.com). Builds neural-network
+      audience models from behavioral signals. Independent advertising controller; constitutes
+      "sharing" under CPRA.
+    action: >-
+      Disclose Cognitiv in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "seedtag.com"
+    name: "Seedtag (Contextual)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Seedtag contextual advertising (s.seedtag.com). Primarily contextual (page-content) targeting,
+      which is lower risk than behavioral, but the integration still receives IP, User-Agent, and
+      page URL, and some configurations include identifier syncing.
+    action: >-
+      Confirm whether the Seedtag integration is purely contextual or includes identifier syncing.
+      Disclose in your privacy policy; if identifiers flow, treat as sharing and verify CMP gating.
+
+  - pattern: "sportradarserving.com"
+    name: "Sportradar Ads"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Sportradar ad serving (a.sportradarserving.com), commonly delivering sports-betting
+      advertising. Betting-adjacent ad categories carry jurisdictional sensitivities in addition to
+      standard ad-tracking exposure.
+    action: >-
+      Disclose the vendor in your privacy policy. Verify CMP suppression on opt-out and confirm
+      betting-ad delivery complies with jurisdictional restrictions on the audience.
+
+  - pattern: "primis.tech"
+    name: "Primis (Video Discovery)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Primis video discovery player (live.primis.tech). Serves a monetized video unit that runs its
+      own ad auctions inside the player. Ad requests from the unit carry viewer identifiers to
+      demand partners.
+    action: >-
+      Treat the player as an ad unit, not content: disclose it, and verify its ad requests are
+      gated by the CMP on GPC and opt-out.
+
+  - pattern: "minutemedia-prebid.com"
+    name: "Minute Media (Prebid Server)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Minute Media hosted Prebid Server (cs.minutemedia-prebid.com). Server-side header bidding:
+      the browser makes one call and the server fans the bid request out to demand partners that
+      are invisible to this capture.
+    action: >-
+      Request the demand-partner list configured in the Prebid Server account; those partners
+      receive the bid request data server-side. Verify consent signals (US Privacy/GPP strings) are
+      populated on the server-side requests.
+
+  - pattern: "openwebmp.com"
+    name: "OpenWeb"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      OpenWeb engagement and monetization platform (hb.openwebmp.com header bidding,
+      sdk.openwebmp.com). Combines a commenting/engagement layer with its own ad demand, so it is
+      both a content feature and an advertising integration.
+    action: >-
+      Disclose OpenWeb in your privacy policy. Verify its header-bidding requests are gated by the
+      CMP on GPC and opt-out.
+
+  - pattern: "dianomi.com"
+    name: "Dianomi (Native Financial Ads)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+      - GLBA
+    description: >-
+      Dianomi native advertising for financial content (dianomi.com, data.dianomi.com, and a hosted
+      prebid server at server.prebid.dianomi.com). High request volume is typical: the unit loads
+      creative, measurement, and auction traffic. Financial-services ad context can put reader
+      interest data adjacent to GLBA-sensitive inference. Independent advertising controller;
+      constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Dianomi in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out,
+      including the data.dianomi.com measurement calls and the prebid server traffic.
+
+  - pattern: "brightline.tv"
+    name: "BrightLine (CTV Ads)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      BrightLine interactive CTV/streaming ad platform (events.brightline.tv). Event beacons track
+      ad interaction on streaming video content.
+    action: >-
+      Disclose BrightLine in your privacy policy. Verify consent gating for streaming ad
+      measurement calls.
+
+  - pattern: "ad-delivery.net"
+    name: "Ad Creative CDN (ad-delivery.net)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Programmatic ad creative delivery domain (ad-delivery.net). Serves creative assets for ads
+      won at auction; operator attribution varies by campaign, so the accountable party is usually
+      the exchange or DSP that delivered the impression. The domain still receives IP, User-Agent,
+      and Referer on every asset load.
+    action: >-
+      Identify which ad partner's creatives load from this domain (the winning bidder in the ad
+      request chain). Attribution belongs with that partner; verify the partner is disclosed and
+      CMP-gated.
+
+  - pattern: "btloader.com"
+    name: "Blockthrough (Adblock Recovery)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Blockthrough adblock recovery (api.btloader.com), a PubMatic company. Detects ad blockers and
+      re-inserts Acceptable Ads-compliant demand for adblock users, meaning users who signaled ad
+      avoidance still receive measured ad traffic.
+    action: >-
+      Confirm the recovered-ads experience is disclosed and that recovered demand respects GPC and
+      opt-out state exactly as standard demand does. The adblock-user segment is disproportionately
+      privacy-motivated; treat it accordingly.
+
+  - pattern: "rlcdn.com"
+    name: "LiveRamp (rlcdn.com)"
+    category: "Identity Resolution"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      LiveRamp identity resolution infrastructure (id.rlcdn.com, idsync.rlcdn.com). Resolves site
+      visitors to LiveRamp's RampID identity graph and syncs that identity across advertising
+      platforms. Identity resolution is the connective tissue of cross-site profiling; constitutes
+      "sharing" under CPRA.
+    action: >-
+      Disclose LiveRamp identity resolution in your privacy policy. Verify CMP suppression on GPC
+      and opt-out for all rlcdn.com sync calls, and confirm the LiveRamp contract scope (sidecar
+      identity vs full data collaboration).
+
+  - pattern: "intentiq.com"
+    name: "Intent IQ (Identity Resolution)"
+    category: "Identity Resolution"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Intent IQ identity resolution (sync.intentiq.com, syncv4.intentiq.com). Reconstructs user
+      identity across devices and cookie-loss boundaries for advertising continuity. Its purpose is
+      to persist identification where the browser attempts to prevent it. Constitutes "sharing"
+      under CPRA.
+    action: >-
+      Disclose identity resolution in your privacy policy in specific terms. Verify CMP suppression
+      on GPC and opt-out, and have counsel review the identity vendor's persistence techniques
+      against wiretap and CIPA theories.
+
+  - pattern: "dotomi.com"
+    name: "Epsilon (Conversant/Dotomi)"
+    category: "Identity Resolution"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Epsilon (Conversant) identity and personalization on the legacy Dotomi domain
+      (triplelift-match.dotomi.com cookie-match endpoint). Epsilon operates one of the largest
+      offline-online identity graphs; a match call links this visitor to it. Constitutes "sharing"
+      under CPRA.
+    action: >-
+      Disclose Epsilon/Conversant in your privacy policy. Verify CMP suppression on GPC and
+      opt-out for match calls.
+
+  - pattern: "agkn.com"
+    name: "Neustar AggKnowledge (TransUnion)"
+    category: "Identity Resolution"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Neustar (TransUnion) Aggregate Knowledge identity and measurement pixel (d.agkn.com). Links
+      site visits into TransUnion's identity and marketing measurement graph. A credit-bureau-owned
+      identity graph raises the stakes of the disclosure question. Constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Neustar/TransUnion in your privacy policy. Verify CMP suppression on GPC and
+      opt-out, and confirm the contract scope with counsel.
+
+  - pattern: "mediaplex.com"
+    name: "Mediaplex (Epsilon)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Mediaplex ad serving and conversion tracking (tpt.mediaplex.com), part of Epsilon. Conversion
+      pixels tie site activity to ad exposure across Epsilon's identity graph. Constitutes
+      "sharing" under CPRA.
+    action: >-
+      Disclose Epsilon/Mediaplex in your privacy policy. Verify CMP suppression on GPC and CCPA
+      opt-out.
+
+  - pattern: "c.bing.com"
+    name: "Microsoft Advertising (Bing Pixel)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Microsoft Advertising conversion and audience pixel traffic on c.bing.com, companion to the
+      UET tag. Ties site behavior to Microsoft's advertising identity. Constitutes "sharing" under
+      CPRA.
+    action: >-
+      Disclose Microsoft Advertising in your privacy policy. Verify UET consent mode is configured
+      and the CMP suppresses c.bing.com calls on GPC and opt-out.
+
+  - pattern: "chartbeat.net"
+    name: "Chartbeat"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Chartbeat real-time editorial analytics (ping.chartbeat.net). Measures article engagement for
+      newsroom dashboards. Typically a service-provider relationship without ad-side data use, which
+      is why the default risk is low; the contract determines whether that holds.
+    action: >-
+      Confirm the Chartbeat DPA establishes service-provider status. Disclose analytics use in your
+      privacy policy. Gate behind analytics consent where required.
+
+  - pattern: "cxense.com"
+    name: "Piano (Cxense)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Piano (formerly Cxense) content analytics and personalization (comcluster.cxense.com). Builds
+      per-user interest profiles for content recommendation and, in some configurations, audience
+      segmentation that feeds advertising. The DMP heritage means configuration determines whether
+      this is analytics or sharing.
+    action: >-
+      Determine whether the Piano/Cxense deployment feeds ad audience segments. If yes, treat as
+      sharing with CMP gating; if analytics only, confirm the DPA and disclose.
+
+  - pattern: "boomtrain.com"
+    name: "Zeta Global (Boomtrain)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Zeta Global content recommendation on the legacy Boomtrain domain
+      (onsiterecs.api.boomtrain.com). Zeta operates a large marketing identity graph; the
+      recommendation call carries visitor context to it.
+    action: >-
+      Confirm the Zeta contract scope (service provider vs data collaboration). Disclose in your
+      privacy policy; if visitor data enriches Zeta's graph, treat as sharing and gate accordingly.
+
+  - pattern: "optimizely.com"
+    name: "Optimizely"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Optimizely experimentation and feature management (logx.optimizely.com event logging).
+      Experiment assignment ties visitor identifiers to behavioral outcomes. Typically a
+      service-provider relationship under DPA.
+    action: >-
+      Confirm the Optimizely DPA. Disclose experimentation/analytics in your privacy policy and
+      gate event logging behind analytics consent where required.
+
+  - pattern: "litix.io"
+    name: "Mux Data (Video Analytics)"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Mux Data video quality-of-experience analytics (litix.io beacons). Measures playback
+      performance (startup time, rebuffering) tied to a viewer session. Operational telemetry more
+      than behavioral profiling; typically service-provider scope.
+    action: >-
+      Confirm the Mux DPA and that viewer identifiers in beacons are pseudonymous. Disclose video
+      analytics in your privacy policy.
+
+  - pattern: "mediamelon.com"
+    name: "MediaMelon (Video QoE)"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      MediaMelon video quality-of-experience and streaming optimization (beacons-wbd.mediamelon.com,
+      register.mediamelon.com). Playback telemetry tied to viewer sessions; typically
+      service-provider scope.
+    action: >-
+      Confirm the vendor DPA. Disclose video analytics in your privacy policy.
+
+  - pattern: "typekit.net"
+    name: "Adobe Fonts (Typekit)"
+    category: "Content Delivery"
+    cc: t
+    risk: ok
+    regs: []
+    description: >-
+      Adobe Fonts delivery (use.typekit.net, p.typekit.net). Serves licensed web fonts; Adobe
+      receives IP, User-Agent, and the requesting page for font-license metering. No advertising
+      use, no cross-site behavioral tracking in standard deployment.
+    action: >-
+      No suppression action expected. Cover font delivery under your privacy policy's
+      infrastructure or subprocessor disclosure.
+
+  - pattern: "js.stripe.com"
+    name: "Stripe (Stripe.js)"
+    category: "Payments"
+    cc: p
+    risk: low
+    regs:
+      - GLBA
+      - US State Privacy
+    description: >-
+      Stripe.js payment library (js.stripe.com; the companion m.stripe.network frame is fraud
+      telemetry). Stripe collects device signals on pages where it loads, for fraud prevention,
+      which is a legitimate purpose but still a data flow to disclose. Loading Stripe.js on
+      non-checkout pages extends that collection beyond where users expect payment processing.
+    action: >-
+      Confirm Stripe.js loads only where payment functionality exists. Disclose payment processing
+      and fraud-prevention data collection in your privacy policy.
+
+  - pattern: "m.stripe.network"
+    name: "Stripe (Stripe.js)"
+    category: "Payments"
+    cc: p
+    risk: low
+    regs:
+      - GLBA
+      - US State Privacy
+    description: >-
+      Stripe.js fraud-telemetry frame (m.stripe.network). Companion to js.stripe.com; collects
+      device signals for Stripe Radar fraud prevention.
+    action: >-
+      Confirm Stripe.js loads only where payment functionality exists. Disclose payment processing
+      and fraud-prevention data collection in your privacy policy.
+
+  - pattern: "accounts.google.com"
+    name: "Google Sign-In / Account Services"
+    category: "Identity Resolution"
+    cc: t
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google account infrastructure (accounts.google.com), typically loaded for Sign in with
+      Google or One Tap prompts. Google learns the visit occurred for logged-in Google users even
+      if the visitor never interacts with the prompt.
+    action: >-
+      Confirm the sign-in integration is intentional on this page. Disclose Google sign-in in your
+      privacy policy. Consider loading One Tap only on pages where authentication is relevant.
+
+  - pattern: "wmcdp.io"
+    name: "Warner Bros. Discovery CDP (wmcdp.io)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Warner Bros. Discovery customer data platform ingest (receive.wmcdp.io). First-party from the
+      corporate family's perspective but a distinct registrable domain collecting cross-property
+      event data into a media conglomerate's central profile store. The consent and disclosure
+      posture depends on how the corporate group's shared-data practices are described to users.
+    action: >-
+      Confirm the privacy policy's corporate-affiliate and cross-property data sharing language
+      covers CDP collection. Verify consent context is honored on ingest and on server-side
+      forwarding to downstream destinations.
+
+  - pattern: "media.max.com"
+    name: "Warner Bros. Discovery Media Infrastructure"
+    category: "Backend Infrastructure"
+    cc: t
+    risk: ok
+    regs: []
+    description: >-
+      Warner Bros. Discovery streaming media delivery (media.max.com paths serving CNN video).
+      Corporate-family content infrastructure rather than third-party tracking.
+    action: >-
+      Cover corporate-affiliate infrastructure in the privacy policy's description of the corporate
+      group and shared infrastructure.
+
+  - pattern: "discomax.com"
+    name: "Warner Bros. Discovery API Infrastructure"
+    category: "Backend Infrastructure"
+    cc: t
+    risk: ok
+    regs: []
+    description: >-
+      Warner Bros. Discovery platform APIs (discomax.com), corporate-family backend services for
+      WBD properties.
+    action: >-
+      Cover corporate-affiliate infrastructure in the privacy policy's description of the corporate
+      group and shared infrastructure.
+
+  - pattern: "2mdn.net"
+    name: "Google DoubleClick Creative CDN (2mdn.net)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google ad creative delivery (s0.2mdn.net), the DoubleClick/Campaign Manager creative CDN.
+      Serves rich-media ad assets for Google-served campaigns; asset loads carry IP, User-Agent,
+      and Referer to Google ad infrastructure. Presence indicates Google display campaigns are
+      rendering. Constitutes "sharing" under CPRA alongside the DoubleClick serving stack.
+    action: >-
+      Treat as part of the Google advertising integration. Verify the serving tags
+      (DoubleClick/Campaign Manager) are disclosed and CMP-gated on GPC and opt-out; creative CDN
+      calls follow the serving decision.
+
+  - pattern: "play.google.com"
+    name: "Google Play Services (Web)"
+    category: "Backend Infrastructure"
+    cc: t
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google Play web services (play.google.com), typically loaded by embedded Google widgets,
+      Cast support, or app-promotion components. Google receives IP, User-Agent, and the
+      requesting page; sign-in state cookies may accompany the request for logged-in Google users.
+    action: >-
+      Identify which embedded component loads it (widget, Cast, app banner). Cover Google
+      infrastructure in your privacy policy's third-party services disclosure.
