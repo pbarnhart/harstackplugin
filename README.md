@@ -37,7 +37,7 @@ Plaintiffs' attorneys build these cases from HAR files. This tool lets you run t
 
 ## How to Use It
 
-1. Download `harstack.html` from [Releases](https://github.com/pbarnhart/harstack/releases)
+1. Download `harstack.html` from [Releases](https://github.com/pbarnhart/harstackplugin/releases)
 2. Open it in Chrome or Firefox (no install required)
 3. Record a HAR file from your site using browser DevTools (Network tab, export HAR)
 4. Drop the HAR file into the tool

@@ -18,7 +18,7 @@
 
 const api = (typeof browser !== "undefined") ? browser : chrome;
 
-const GITHUB_REPO = "https://github.com/pbarnhart/harstack";
+const GITHUB_REPO = "https://github.com/pbarnhart/harstackplugin";
 
 const state = {
   entries: [], lastHar: null, lastAnalysis: null, lastJson: null,

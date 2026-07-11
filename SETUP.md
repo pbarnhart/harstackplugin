@@ -10,7 +10,7 @@ This site uses a deliberate split between the promotional page and the tool down
 
 **Landing page (`harstack.com`)** is served through Cloudflare. Cloudflare provides CDN performance, SSL, security headers, and bot rule controls. Cloudflare receives connection metadata -- IP addresses, timestamps, request paths -- as part of normal proxy operation. This is disclosed explicitly on the landing page in an Infrastructure Transparency section.
 
-**Tool download** links directly to a GitHub release asset (`github.com/pbarnhart/harstack/releases/latest/download/harstack.html`). The download request goes to GitHub's infrastructure, not through Cloudflare. GitHub (Microsoft) is a known and expected dependency for open source software. The tool itself runs entirely locally after download -- no data leaves the user's machine during analysis.
+**Tool download** links directly to a GitHub release asset (`github.com/pbarnhart/harstackplugin/releases/latest/download/harstack.html`). The download request goes to GitHub's infrastructure, not through Cloudflare. GitHub (Microsoft) is a known and expected dependency for open source software. The tool itself runs entirely locally after download -- no data leaves the user's machine during analysis.
 
 This architecture means a visitor who runs a HAR on the landing page will see: Cloudflare connection (expected, disclosed), Google Fonts request (expected, disclosed), and nothing else. No advertising pixels, no analytics, no session replay. The HAR result matches exactly what the page says.
 
@@ -263,9 +263,9 @@ Phil Barnhart, CIPP/US. Principal Consultant at YourExitRamp LLC. Publisher of P
 ## Links
 
 - Tool: https://harstack.com/tool/
-- GitHub: https://github.com/pbarnhart/harstack
+- GitHub: https://github.com/pbarnhart/harstackplugin
 - Newsletter: https://pixelsandpolicy.substack.com
-- Issues: https://github.com/pbarnhart/harstack/issues
+- Issues: https://github.com/pbarnhart/harstackplugin/issues
 ```
 
 ### 4c. Schema markup in index.html
