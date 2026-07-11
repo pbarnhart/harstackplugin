@@ -256,12 +256,20 @@ trackers:
       underlying email and phone values for logged-in users and can match the hashed values to
       identified accounts. Under most US state privacy laws, transmission of hashed identifying
       information to a third-party advertising platform constitutes "sharing," "sale," or "targeted
-      advertising" depending on the jurisdiction's terminology.
+      advertising" depending on the jurisdiction's terminology. The classification also carries DSAR
+      obligations: under CPRA § 1798.105(c), a business honoring a verified deletion request must
+      notify third parties to whom it sold or shared the consumer's personal information to delete
+      it, and right-to-know responses must disclose this recipient category. A DSAR workflow that
+      does not know this flow exists cannot satisfy either obligation, and this capture is evidence
+      the flow exists.
     action: >-
       (1) Audit which form fields are wired to Enhanced Conversions and on which pages; (2) verify
       suppression on GPC and CCPA opt-out; (3) disclose Enhanced Conversions specifically in your
       privacy policy, including the hashed-PII transmission to Google; (4) confirm DPA terms cover the
-      conversion ID and the hashed identifiers transmitted.
+      conversion ID and the hashed identifiers transmitted; (5) add this flow to the DSAR fulfillment
+      inventory: deletion requests must propagate to Google under § 1798.105(c)(3), and access
+      responses must list Google as a recipient of hashed identifiers. Confirm with counsel which of
+      Google's deletion mechanisms applies to Enhanced Conversions data.
 
   - pattern: "google.com/ccm/form-data"
     name: "Google Ads Conversion Linker (Form Data)"
@@ -277,7 +285,8 @@ trackers:
       (GCLID) for attribution. Same CPRA sharing analysis applies.
     action: >-
       Same as Enhanced Conversions: audit form-field wiring, suppress on GPC and opt-out, disclose by
-      name in privacy policy.
+      name in privacy policy, and include the flow in the DSAR fulfillment inventory (deletion
+      propagation to Google under CPRA § 1798.105(c)(3); recipient disclosure in access responses).
 
   - pattern: "google.com/ccm/collect"
     name: "Google Ads CCM (Collect)"
@@ -326,9 +335,15 @@ trackers:
       Google Ads first-party customer list upload endpoint. Used to build Customer Match audiences
       from site visitors. Transmits hashed user identifiers to Google for audience matching.
       Constitutes "sharing" under CPRA and is one of the most frequently litigated data flows.
+      Deletion requests reach this flow directly: a consumer whose identifiers were uploaded remains
+      in the Customer Match audience until removed, so DSAR deletion fulfillment requires removal
+      from the uploaded lists, not just suppression of future uploads.
     action: >-
       Verify the 1P User List tag is consent-gated. Audit the list of fields uploaded to Google.
       Disclose Customer Match by name in your privacy policy. Suppress on GPC and CCPA opt-out.
+      Include Customer Match in the DSAR fulfillment inventory: on a verified deletion request,
+      remove the consumer from uploaded Customer Match lists (Google Ads audience management
+      supports member removal) and record the propagation under CPRA § 1798.105(c)(3).
 
   - pattern: "pagead/viewthroughconversion"
     name: "Google Ads Viewthrough Conversion"
@@ -1508,7 +1523,9 @@ trackers:
       and private-network configuration to identify every downstream affiliate receiving data; (3)
       verify the CMP suppresses Awin tracking on CCPA opt-out and GPC, including the dwin1.com cookie;
       (4) review consent flows for cross-context behavioral advertising "sharing" disclosure
-      requirements.
+      requirements; (5) include Awin and its sub-publishers in the DSAR fulfillment inventory:
+      deletion requests must propagate to each controller that received the data under CPRA
+      § 1798.105(c)(3), which the sub-publisher audit in (2) makes possible.
 
   - pattern: "roeye.com"
     name: "R.O.EYE Limited (SingleView)"
@@ -2644,7 +2661,10 @@ trackers:
     action: >-
       Disclose LiveRamp in privacy policy as an identity resolution partner. Suppress on CCPA opt-out
       and GPC. Evaluate whether authenticated user data (hashed email from login or form submission)
-      is being passed to LiveRamp. Confirm DPA terms address the data co-op sharing model.
+      is being passed to LiveRamp. Confirm DPA terms address the data co-op sharing model. Include
+      LiveRamp in the DSAR fulfillment inventory: deletion requests must propagate under CPRA
+      § 1798.105(c)(3), and the co-op model means downstream partners received the data too. Ask
+      LiveRamp how deletion propagates through the co-op and document the answer.
 
   - pattern: "sitedataprocessing.com"
     name: "LiveRamp (SiteDataProcessing)"
@@ -3141,7 +3161,9 @@ trackers:
       hashed email when Enhanced Match is enabled. Subject to CCPA sale/sharing restrictions.
     action: >-
       Disclose Pinterest as an advertising vendor in your privacy policy. Verify CMP suppression on
-      opt-out. Review Pinterest Enhanced Match configuration if email hashing is active.
+      opt-out. Review Pinterest Enhanced Match configuration if email hashing is active; where it is,
+      include the flow in the DSAR fulfillment inventory (deletion propagation to Pinterest under
+      CPRA § 1798.105(c)(3); recipient disclosure in access responses).
 
   - pattern: "s.pinimg.com"
     name: "Pinterest (CDN)"
