@@ -1,0 +1,3624 @@
+# HARstack tracker database
+# This file is the authoritative source for the TR object in the tool.
+# build/build.py reads it and generates the JavaScript const TR = { ... } block.
+#
+# Fields:
+#   pattern     URL substring matched against request URLs (key into TR object)
+#   name        human-readable vendor name
+#   category    display category (Advertising, Analytics, Session Replay, ...)
+#   cc          category code: a=advertising, an=analytics, s=session replay,
+#               d=CDP, c=CMP, t=tag management, e=email marketing, p=payment
+#   risk        high | medium | low | ok
+#   regs        applicable regulations (list)
+#   description vendor description; may contain <<SR_FRAMING>> placeholder
+#   action      audit action items; may contain <<SR_ACTION>> placeholder
+#
+# <<SR_FRAMING>> and <<SR_ACTION>> expand to the shared text blocks defined
+# in the 'shared' section below. build.py substitutes them at build time.
+
+shared:
+  sr_framing: >-
+    Session replay tools record user interactions (clicks, scrolls, form interactions, page
+    navigation) in real time. Courts have addressed real-time session recording under both ECPA
+    (Wiretap Act) and CIPA wiretapping/eavesdropping theories. The litigation exposure attaches at the
+    moment of capture, not downstream: deletion frameworks and machine unlearning policies do not
+    address the interception itself. Standing has been a defense win in some cases (notably Popa v.
+    Microsoft at the Ninth Circuit in August 2025, affirmed dismissal for lack of concrete injury),
+    but motions to dismiss continue to be denied in others. Where the session replay vendor processes
+    data for its own commercial purposes (rather than as a service provider under DPA), the
+    transmission also constitutes "sharing" under CPRA.
+
+  sr_action: >-
+    (1) Inventory every page where this session replay tool is active; (2) remove from pages where
+    financial data, health information, credentials, or other sensitive inputs are entered; (3)
+    disclose the tool by name in your privacy policy; (4) verify the CMP gates session replay firing
+    on opt-out and GPC; (5) confirm the contractual relationship (processor with executed DPA vs.
+    independent controller) and the data use scope.
+
+trackers:
+  - pattern: "facebook.com/tr"
+    name: "Meta Pixel"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Transmits browsing behavior and page URLs to Meta in real time. If your privacy policy states
+      you do not share data with advertising partners, this is a direct policy conflict: the pattern
+      the August 2025 ECPA ruling found sufficient to state a federal wiretapping claim.
+    action: >-
+      Verify policy discloses Meta data sharing. Confirm CMP suppresses this tag on opt-out and GPC
+      signal. Confirm CCPA sharing designation applies.
+
+  - pattern: "connect.facebook.net"
+    name: "Meta Pixel SDK"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Meta Pixel JavaScript SDK from Facebook CDN. Enables real-time behavioral data to Meta
+      advertising.
+    action: >-
+      Same as Meta Pixel. Review policy and CMP configuration.
+
+  - pattern: "ads.tiktok.com"
+    name: "TikTok Pixel"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Collects user behavior for TikTok ad targeting. CCPA sale/sharing restrictions apply. TikTok
+      cross-border data transfer practices add additional regulatory surface.
+    action: >-
+      Review cross-border transfer implications. CMP suppression on opt-out. Specific privacy policy
+      disclosure required.
+
+  - pattern: "analytics.tiktok.com"
+    name: "TikTok Analytics"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - US State Privacy
+    description: >-
+      TikTok analytics collection endpoint.
+    action: >-
+      Review policy disclosure and CMP suppression.
+
+  - pattern: "alb.reddit.com"
+    name: "Reddit Pixel"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Reddit conversion pixel. Same structural ECPA and CCPA exposure as larger ad platforms with
+      growing litigation presence.
+    action: >-
+      Disclose in privacy policy. Verify CMP suppression on opt-out.
+
+  - pattern: "analytics.google.com"
+    name: "GA4"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Analytics 4. Transmits events, page URLs, and user identifiers to Google. Depending on
+      contract terms and data use configuration, may constitute "sharing" under CPRA.
+    action: >-
+      Review GA4 data processing agreement. Determine whether configuration constitutes sharing.
+      Verify CMP integration.
+
+  - pattern: "google-analytics.com/g/"
+    name: "GA4 (collect)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Analytics 4 collection endpoint. GA4 currently uses two collection domains:
+      google-analytics.com/g/collect and analytics.google.com/g/collect. Both are active. The
+      /g/collect path is the GA4 browser-side collection endpoint; the /mp/collect path on the same
+      domain is the GA4 Measurement Protocol endpoint for server-side hits (requires an API secret,
+      rarely seen in a browser HAR). GA4 measurement IDs use the G- prefix. Hits carrying tid=UA- on
+      the legacy /collect path indicate Universal Analytics, which Google deprecated on July 1, 2023;
+      UA hits in a current-year capture warrant a separate remediation note because that data is no
+      longer being processed.
+    action: >-
+      Review GA4 configuration. Verify Google Signals state and whether the configuration constitutes
+      "sharing" under CPRA. Verify CMP gating.
+
+  - pattern: "tid=UA-"
+    name: "Google Analytics (UA)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Universal Analytics tracking ID (UA- prefix) detected in a collect request. Google sunset UA on
+      July 1, 2024 and processing stopped July 2024. Any active UA-tid traffic now means stale tags
+      still firing or a legacy integration that was never migrated.
+    action: >-
+      Identify and remove the source of UA-tid traffic. Confirm migration to GA4 is complete. Audit
+      GTM/tag-manager configurations for orphaned UA tags.
+
+  - pattern: "googletagmanager.com"
+    name: "Google Tag Manager"
+    category: "Tag Management"
+    cc: t
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      GTM container. Risk is in what tags are deployed inside it, not GTM itself. Server-side GTM
+      configurations can affect consent bypass risk.
+    action: >-
+      Audit what tags fire inside GTM. Verify no tags are configured to fire outside CMP consent
+      logic.
+
+  - pattern: "gtag/js?id=AW-"
+    name: "Google Ads (gtag)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Ads gtag.js loaded with an AW- conversion ID prefix. This fires Google Ads conversion
+      tracking, remarketing, and Enhanced Conversions if configured. Constitutes "sharing" under CPRA.
+      Must be suppressed on GPC and opt-out.
+    action: >-
+      Verify CMP suppresses this tag on GPC and CCPA opt-out. Confirm Enhanced Conversions hashed PII
+      handling. Disclose Google Ads sharing in your privacy policy.
+
+  - pattern: "gtag/js?id=G-"
+    name: "GA4 (gtag)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Analytics 4 loaded via gtag.js (G- measurement ID prefix). Loads the GA4 measurement
+      library and initiates the /g/collect data flow.
+    action: >-
+      Verify CMP gating. Review Google Signals configuration and whether the deployment constitutes
+      sharing.
+
+  - pattern: "gtag/js?id=UA-"
+    name: "Google Analytics UA (gtag)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Legacy Universal Analytics loaded via gtag.js (UA- tracking ID prefix). Google stopped
+      processing UA traffic in July 2024. Any UA-tid gtag load is a stale tag firing.
+    action: >-
+      Remove the legacy UA tag from your tag manager configuration. Confirm GA4 has fully replaced it.
+
+  - pattern: "googlesyndication.com"
+    name: "Google AdSense / Display Ads"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google AdSense and Display Network ad serving infrastructure (googlesyndication.com).
+      Subdomains include pagead2 (ad script loading) and ade (Google AdExchange/Display Network
+      ad delivery). Fires when the site runs Google Display ads or AdSense placements. Transmits
+      visitor browsing context and targeting signals to Google for programmatic ad matching.
+      Constitutes sale or sharing of personal information under CPRA.
+    action: >-
+      Verify CMP suppresses this endpoint on GPC and opt-out. Confirm Google Ads tags in GTM
+      are consent-gated. Disclose Google Display/AdSense in your privacy policy under
+      third-party advertising.
+
+  - pattern: "google.com/pagead/form-data"
+    name: "Google Ads Enhanced Conversions (Form Data)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Ads Enhanced Conversions endpoint. Receives hashed PII (em=<sha256-email>,
+      pn=<sha256-phone>) extracted from form fields at submission. The hashing happens client-side via
+      the Google tag and is matched against Google's logged-in user database to attribute conversions
+      to ad clicks. Constitutes "sharing," "sale," or "targeted advertising" under most US state
+      privacy laws. The FTC's BetterHelp consent order (FTC File No. 2023-169, In the Matter of
+      BetterHelp, Inc., Docket C-4796, final order July 14, 2023) established that hashing fails to
+      protect privacy when the receiving party can un-hash the data; Google already possesses the
+      underlying email and phone values for logged-in users and can match the hashed values to
+      identified accounts. Under most US state privacy laws, transmission of hashed identifying
+      information to a third-party advertising platform constitutes "sharing," "sale," or "targeted
+      advertising" depending on the jurisdiction's terminology.
+    action: >-
+      (1) Audit which form fields are wired to Enhanced Conversions and on which pages; (2) verify
+      suppression on GPC and CCPA opt-out; (3) disclose Enhanced Conversions specifically in your
+      privacy policy, including the hashed-PII transmission to Google; (4) confirm DPA terms cover the
+      conversion ID and the hashed identifiers transmitted.
+
+  - pattern: "google.com/ccm/form-data"
+    name: "Google Ads Conversion Linker (Form Data)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Ads Conversion Linker / CCM endpoint on the google.com domain. Companion to Enhanced
+      Conversions form-data: carries the hashed PII and links it to the Google Click Identifier
+      (GCLID) for attribution. Same CPRA sharing analysis applies.
+    action: >-
+      Same as Enhanced Conversions: audit form-field wiring, suppress on GPC and opt-out, disclose by
+      name in privacy policy.
+
+  - pattern: "google.com/ccm/collect"
+    name: "Google Ads CCM (Collect)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Conversion Measurement endpoint on the google.com domain. Variant of the CCM collection
+      endpoint used by Google Ads conversion tracking. Sends page URL, event names, and tracking
+      identifiers to Google for conversion attribution and remarketing. Constitutes "sharing" under
+      CPRA.
+    action: >-
+      Suppress on GPC and CCPA opt-out. Confirm the upstream tag that fires this endpoint is
+      consent-gated in your tag manager. Disclose Google Ads conversion measurement in your privacy
+      policy.
+
+  - pattern: "google.com/rmkt/collect"
+    name: "Google Ads Remarketing Collection"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Ads remarketing collection endpoint. Builds custom audiences for retargeted advertising
+      based on site visits and conversion events. Page URLs and event names are transmitted.
+      Constitutes "sharing" under CPRA. This is the canonical cross-context behavioral advertising
+      data flow.
+    action: >-
+      Suppress on GPC and CCPA opt-out. Confirm remarketing audiences are not built for opted-out
+      users. Disclose in your privacy policy and identify by purpose (remarketing).
+
+  - pattern: "google.com/pagead/1p-user-list"
+    name: "Google Ads 1P User List Upload"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Ads first-party customer list upload endpoint. Used to build Customer Match audiences
+      from site visitors. Transmits hashed user identifiers to Google for audience matching.
+      Constitutes "sharing" under CPRA and is one of the most frequently litigated data flows.
+    action: >-
+      Verify the 1P User List tag is consent-gated. Audit the list of fields uploaded to Google.
+      Disclose Customer Match by name in your privacy policy. Suppress on GPC and CCPA opt-out.
+
+  - pattern: "pagead/viewthroughconversion"
+    name: "Google Ads Viewthrough Conversion"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Ads viewthrough conversion pixel. Fires when a user converts after viewing (not clicking)
+      a Google ad. Sends conversion event and identifiers to Google for attribution.
+    action: >-
+      Suppress on GPC and CCPA opt-out. Disclose in privacy policy as part of Google Ads attribution.
+
+  - pattern: "googleadservices.com"
+    name: "Google Ads"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Ads conversion tracking and Enhanced Conversions infrastructure. If Enhanced Conversions
+      is active, hashed PII is transmitted to Google.
+    action: >-
+      Verify Enhanced Conversions PII handling. Confirm CMP suppression on opt-out.
+
+  - pattern: "clarity.ms"
+    name: "Microsoft Clarity"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      <<SR_FRAMING>> Microsoft Clarity specifically: Microsoft operates as an independent data
+      controller under its published terms (Section 4.4(c)(iii) reserves the right to "create user
+      profiles for purposes that include advertising"), not as a service provider. Microsoft does not
+      sign DPAs or service provider addendums with deploying customers. As of October 31, 2025,
+      Microsoft began requiring valid consent signals from visitors in the EEA, UK, and Switzerland
+      before Clarity collects data, though the underlying controller relationship has not changed for
+      US deployments. Default input field masking exists but has documented gaps, including a known
+      issue where Copilot Session Insights can surface content that should be masked.
+    action: >-
+      <<SR_ACTION>> For Microsoft Clarity specifically: implement the Clarity Consent API and gate
+      firing to a behavioral-analytics consent category, not page-load default. Note the independent
+      controller designation in your privacy policy. Microsoft has been named as a defendant in
+      session replay litigation (notably Popa v. Microsoft, though that case was dismissed on Article
+      III standing grounds in August 2025).
+
+  - pattern: "hotjar.com"
+    name: "Hotjar"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      <<SR_FRAMING>> Hotjar specifically: includes session recording, heatmaps, and surveys. Hotjar
+      operates as a processor under standard DPA terms (Contentsquare-owned since 2023).
+    action: >-
+      <<SR_ACTION>>
+
+  - pattern: "fullstory.com"
+    name: "FullStory"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      <<SR_FRAMING>> FullStory specifically: full session capture including DOM snapshots. Operates as
+      a processor under standard DPA terms.
+    action: >-
+      <<SR_ACTION>>
+
+  - pattern: "logrocket.com"
+    name: "LogRocket"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      <<SR_FRAMING>> LogRocket specifically: session recording with console log capture. Elevated
+      exposure on authenticated and transactional pages because console output may include sensitive
+      runtime values.
+    action: >-
+      <<SR_ACTION>>
+
+  - pattern: "cdn.segment.com"
+    name: "Segment (Analytics.js)"
+    category: "CDP"
+    cc: d
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Segment browser SDK detected. Events sent client-side are visible in the HAR. However,
+      server-side (cloud-mode) destinations including Meta CAPI, Google Ads, and TikTok Events API are
+      not visible here. They fire from your server after the browser call completes. A clean HAR does
+      not mean those destinations are not receiving data. Consent enforcement must be verified at the
+      data plane level, not just the browser.
+    action: >-
+      Audit all Segment destinations. Confirm server-side destinations honor opt-out flags passed in
+      event context. Verify consent state is propagated to the data plane. Check integrations object
+      in event payloads below.
+
+  - pattern: "api.segment.com"
+    name: "Segment (Data Plane)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Segment data plane API receiving event POSTs from the browser. Payload inspection below shows
+      event names, PII field presence, and destination routing configuration.
+    action: >-
+      Review integrations object for All:true pattern. Verify opt-out context is passed with each
+      event. Confirm server-side destinations are not receiving events for opted-out users.
+
+  - pattern: "api.rudderstack.com"
+    name: "RudderStack (Data Plane)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      RudderStack data plane receiving event POSTs. Same server-side gap applies. Destinations
+      configured in RudderStack receive events server-side and are not visible in the HAR. Payload
+      inspection below shows what was sent from the browser.
+    action: >-
+      Review destination configuration. Confirm consent enforcement at the transformation layer.
+      Verify opted-out users are suppressed at source.
+
+  - pattern: "cdn.rudderlabs.com/v"
+    name: "RudderStack (SDK)"
+    category: "CDP"
+    cc: d
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      RudderStack browser SDK loaded from a versioned CDN path. Client-side calls visible in HAR.
+      Server-side destination forwarding not visible.
+    action: >-
+      Verify consent controls at source level. Review data plane event payloads in CDP Events tab.
+
+  - pattern: "dataplane.rudderstack.com"
+    name: "RudderStack (Data Plane)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      RudderStack data plane endpoint. Receives event POSTs from the browser. Destinations configured
+      server-side receive forwarded events and are not visible in this HAR.
+    action: >-
+      Review destination configuration. Verify consent enforcement at transformation layer. Confirm
+      opted-out users are suppressed at source.
+
+  - pattern: "rudder-analytics.min.js"
+    name: "RudderStack (Analytics SDK, legacy)"
+    category: "CDP"
+    cc: d
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      RudderStack legacy Analytics SDK file. Confirms RudderStack is the active CDP regardless of
+      which domain serves the file.
+    action: >-
+      Verify SDK loads only after consent for analytics or CDP-routed processing. Review CDP Events
+      tab.
+
+  - pattern: "sourceConfig/?p="
+    name: "RudderStack (Source Config)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      RudderStack source configuration call detected. The /sourceConfig/?p=<src> path with a writeKey
+      parameter is the definitive RudderStack signature and matches regardless of whether the SDK is
+      loaded from RudderStack's CDN (p=cdn) or bundled via npm (p=npm), and regardless of whether the
+      data plane runs on a RudderStack-owned domain or a customer-owned CNAME. CNAME deployments are
+      first-party from the browser's perspective: they share cookies with the parent domain, bypass
+      third-party cookie restrictions, and are typically excluded from CMP block-by-default lists.
+      This is intentional infrastructure and not in itself a violation, but it changes the consent
+      enforcement model. Server-side destinations configured inside RudderStack receive forwarded
+      events and are not visible in this HAR.
+    action: >-
+      Confirm the CNAME deployment is documented in your privacy policy as a first-party endpoint that
+      forwards to third-party destinations. Audit configured destinations in the RudderStack
+      workspace. Verify consent context (tracking_consent, marketing_consent,
+      consentManagement.deniedConsentIds) is read at the transformation or destination level before
+      forwarding, not just emitted in the event payload.
+
+  - pattern: "rsa.min.js"
+    name: "RudderStack (Analytics SDK)"
+    category: "CDP"
+    cc: d
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      RudderStack Analytics SDK (rsa.min.js, build=modern). Loads the client-side event collection
+      library. Confirms RudderStack is the active CDP regardless of which domain serves the file.
+    action: >-
+      Verify the SDK loads only after consent for analytics or CDP-routed processing. Review the CDP
+      Events tab for actual event payloads transmitted.
+
+  - pattern: "rsa-plugins-"
+    name: "RudderStack (SDK Plugins)"
+    category: "CDP"
+    cc: d
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      RudderStack SDK plugin modules (rsa-plugins-*). The specific plugins loaded reveal which
+      features are active: ConsentManager, DeviceModeDestinations, NativeDestinationQueue,
+      GoogleLinker, and others each have distinct consent implications.
+    action: >-
+      Audit the loaded plugin set. CustomConsentManager indicates a custom consent integration; review
+      its configuration. DeviceModeDestinations means tags fire client-side and are visible here;
+      NativeDestinationQueue means events route server-side and destinations are not visible in this
+      HAR.
+
+  - pattern: "doubleclick.net"
+    name: "Google DoubleClick / DV360"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google cross-site advertising network. Indicates behavioral targeting using cross-site tracking
+      data. CCPA "sharing" definition covers this configuration.
+    action: >-
+      Review cross-site data use. CMP suppression on opt-out. Disclose in policy.
+
+  - pattern: "quantserve.com"
+    name: "Quantcast"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Cross-site audience measurement and advertising.
+    action: >-
+      Disclose in policy. Verify CMP suppression.
+
+  - pattern: "scorecardresearch.com"
+    name: "Comscore"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Third-party audience measurement. Data flows to Comscore servers.
+    action: >-
+      Disclose in policy. Verify contractual basis.
+
+  - pattern: "appsflyer.com"
+    name: "AppsFlyer"
+    category: "Mobile Attribution"
+    cc: t
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Mobile attribution on a web page. May set attribution cookies or fingerprint for app install
+      measurement. CCPA mobile opt-out requires server-side propagation. Browser opt-outs do not reach
+      mobile apps.
+    action: >-
+      Verify web opt-outs propagate to mobile attribution via AppsFlyer Data Deletion API.
+
+  - pattern: "mixpanel.com"
+    name: "Mixpanel"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Product analytics. Collects behavioral events tied to user IDs. CCPA deletion and opt-out
+      obligations apply.
+    action: >-
+      Verify deletion API implementation for CCPA DSARs. Confirm opt-out propagation.
+
+  - pattern: "osano.com"
+    name: "Osano"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Osano consent management platform detected. Load order is critical. If Osano loads after
+      tracking scripts, consent cannot be gated.
+    action: >-
+      Verify load order, consent type configuration, GPC detection, and opt-out propagation to all ad
+      platforms.
+
+  - pattern: "cookiebot.com"
+    name: "Cookiebot"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Cookiebot CMP.
+    action: >-
+      Verify load order and GPC detection.
+
+  - pattern: "onetrust.com"
+    name: "OneTrust"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      OneTrust CMP. Verify load order and GPC detection. Confirm Meta LDU and Google RDP flags
+      propagate for opted-out users.
+    action: >-
+      Verify load order, GPC detection, and platform opt-out flag configuration.
+
+  - pattern: "usercentrics.com"
+    name: "Usercentrics"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Usercentrics CMP.
+    action: >-
+      Verify load order and GPC signal handling.
+
+  - pattern: "cookiehub.com"
+    name: "CookieHub"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      CookieHub CMP.
+    action: >-
+      Verify load order and opt-out propagation.
+
+  - pattern: "termly.io"
+    name: "Termly"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+    description: >-
+      Termly consent management.
+    action: >-
+      Verify load order and GPC detection.
+
+  - pattern: "trustarc.com"
+    name: "TrustArc"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      TrustArc consent platform.
+    action: >-
+      Verify load order and GPC detection.
+
+  - pattern: "privacymanager.io"
+    name: "Sourcepoint"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Sourcepoint CMP.
+    action: >-
+      Verify load order.
+
+  - pattern: "consentmanager.net"
+    name: "Consentmanager"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Consentmanager CMP.
+    action: >-
+      Verify load order.
+
+  - pattern: "cookie-script.com"
+    name: "Cookie-Script"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Cookie-Script CMP. Lithuania-based consent management platform. Supports GDPR, CCPA/CPRA, and
+      TCF v2.2. Standard CMP load-order and GPC-handling considerations apply.
+    action: >-
+      Verify Cookie-Script loads before any tracking script (banner must appear before tags fire),
+      confirm GPC detection is enabled in the Cookie-Script dashboard, and verify opt-out signals
+      propagate to all ad and analytics platforms identified in this audit.
+
+  - pattern: "geo.cookie-script.com"
+    name: "Cookie-Script (Geo)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Cookie-Script geolocation endpoint. Used to determine which consent framework (GDPR, CCPA, etc.)
+      to present based on visitor location.
+    action: >-
+      See Cookie-Script findings.
+
+  - pattern: "cdn.cookie-script.com"
+    name: "Cookie-Script (CDN)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Cookie-Script script CDN. Confirms Cookie-Script is deployed.
+    action: >-
+      See Cookie-Script findings.
+
+  - pattern: "intercom.io"
+    name: "Intercom"
+    category: "Marketing / Chat"
+    cc: e
+    risk: medium
+    regs:
+      - US State Privacy
+      - CAN-SPAM
+    description: >-
+      Collects visitor identity and enables behavioral email targeting. CAN-SPAM unsubscribe
+      obligations apply to marketing emails sent through Intercom.
+    action: >-
+      Review data collection scope. Ensure CAN-SPAM unsubscribe is functional within 10 business days.
+
+  - pattern: "hubspot.com"
+    name: "HubSpot"
+    category: "Marketing"
+    cc: e
+    risk: medium
+    regs:
+      - US State Privacy
+      - CAN-SPAM
+    description: >-
+      HubSpot tracking links visitor identity across sessions. Marketing emails carry CAN-SPAM
+      obligations.
+    action: >-
+      Disclose in policy. Verify opt-out propagation. Confirm CAN-SPAM unsubscribe processing.
+
+  - pattern: "klaviyo.com"
+    name: "Klaviyo"
+    category: "Email Marketing"
+    cc: e
+    risk: medium
+    regs:
+      - US State Privacy
+      - CAN-SPAM
+    description: >-
+      Links site behavior to email identity for targeting. CAN-SPAM and CCPA apply.
+    action: >-
+      Verify suppression list integrity. Confirm unsubscribe processing. Disclose in policy.
+
+  - pattern: "bat.bing.com"
+    name: "Microsoft UET"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Microsoft Universal Event Tracking for Bing Ads.
+    action: >-
+      Disclose in policy. Verify CMP gating.
+
+  - pattern: "ads.linkedin.com"
+    name: "LinkedIn Ads"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      LinkedIn advertising endpoint.
+    action: >-
+      Review policy and CMP configuration.
+
+  - pattern: "analytics.twitter.com"
+    name: "X (Twitter) Analytics"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      X/Twitter analytics and advertising endpoint.
+    action: >-
+      Disclose in policy. Verify CMP gating.
+
+  - pattern: "sentry.io"
+    name: "Sentry"
+    category: "Error Tracking"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Sentry error and performance monitoring. Captures stack traces, breadcrumbs, request context,
+      and any user context the SDK has been configured to attach (user IDs, email, IP). Sentry
+      operates as a processor under its standard DPA, but error events can contain arbitrary PII
+      pulled from the page state at the moment of error. If the application sets
+      Sentry.setUser({email, id}) anywhere, every error transmits that PII to Sentry servers.
+      Replay-mode Sentry sessions capture user interactions similar to session replay tools and carry
+      the same wiretapping exposure category.
+    action: >-
+      Audit the Sentry SDK configuration: confirm sendDefaultPii is false, scrub PII from error
+      contexts, and verify whether Sentry Session Replay is enabled. Disclose Sentry by name in your
+      privacy policy as a sub-processor. Set a data retention policy in the Sentry project settings.
+
+  - pattern: "sentry-cdn.com"
+    name: "Sentry (CDN)"
+    category: "Error Tracking"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Sentry SDK loaded from Sentry CDN. Confirms Sentry is deployed.
+    action: >-
+      See Sentry findings above. Audit SDK configuration and PII scrubbing.
+
+  - pattern: "px-cdn.net"
+    name: "HUMAN Security (PerimeterX)"
+    category: "Bot Protection"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      HUMAN Security (formerly PerimeterX) bot detection and anti-fraud infrastructure. Collects
+      device fingerprinting, behavioral signals, and challenge interactions. Payloads are encoded;
+      full content is opaque without vendor decoding tools. Bot protection is generally
+      legitimate-interest processing under GDPR and not "sharing" under CPRA, but the data collection
+      is still personal data and must be disclosed.
+    action: >-
+      Disclose HUMAN Security/PerimeterX by name in your privacy policy. Confirm the data processing
+      agreement is in place. Verify the deployment scope (login pages and checkout only is best
+      practice; site-wide is broader exposure).
+
+  - pattern: "px-cloud.net"
+    name: "HUMAN Security (PerimeterX Cloud)"
+    category: "Bot Protection"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      HUMAN Security cloud collector endpoint. Receives encoded bot detection signals from the px-cdn
+      client.
+    action: >-
+      See HUMAN Security findings above.
+
+  - pattern: "perimeterx.net"
+    name: "HUMAN Security (Legacy)"
+    category: "Bot Protection"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Legacy PerimeterX domain. HUMAN Security has migrated to px-cdn.net and px-cloud.net.
+    action: >-
+      Confirm migration is complete and update any documentation referencing the legacy domain.
+
+  - pattern: "browser-intake-datadoghq.com"
+    name: "Datadog RUM"
+    category: "Error Tracking"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+    description: >-
+      Datadog Real User Monitoring data ingestion endpoint. Receives full session telemetry including
+      page navigation, user actions, network requests, performance metrics, error stack traces, and
+      (when Session Replay is enabled) DOM recordings of user interactions. Standard DPA processor
+      relationship, but the SDK can capture arbitrary PII from form fields, URLs, and user contexts
+      depending on how it is configured. Session Replay mode carries the same CIPA and ECPA
+      wiretapping exposure as Microsoft Clarity, Hotjar, and FullStory.
+    action: >-
+      Audit the Datadog RUM SDK configuration: (1) confirm Session Replay is disabled on pages
+      handling financial, health, or credential data; (2) verify defaultPrivacyLevel is mask or
+      mask-user-input, not allow; (3) scrub PII from custom user contexts and global context; (4)
+      disclose Datadog by name in your privacy policy as a sub-processor; (5) confirm DPA terms are
+      executed and current.
+
+  - pattern: "browser-intake-us5-datadoghq.com"
+    name: "Datadog RUM (US5)"
+    category: "Error Tracking"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+    description: >-
+      Datadog RUM ingestion endpoint for the US5 region. Same analysis as the global Datadog RUM
+      endpoint applies.
+    action: >-
+      See Datadog RUM findings.
+
+  - pattern: "browser-intake-us3-datadoghq.com"
+    name: "Datadog RUM (US3)"
+    category: "Error Tracking"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+    description: >-
+      Datadog RUM ingestion endpoint for the US3 region.
+    action: >-
+      See Datadog RUM findings.
+
+  - pattern: "browser-intake-eu1-datadoghq.com"
+    name: "Datadog RUM (EU1)"
+    category: "Error Tracking"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - GDPR
+      - ECPA
+    description: >-
+      Datadog RUM ingestion endpoint for the EU1 region. EU region selection has cross-border transfer
+      implications: confirm SCCs are in place and data residency requirements are documented.
+    action: >-
+      See Datadog RUM findings. Confirm EU data residency is intentional and SCCs are in place if EU
+      users are routed here from non-EU regions.
+
+  - pattern: "datadoghq-browser-agent.com"
+    name: "Datadog RUM (SDK)"
+    category: "Error Tracking"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Datadog browser SDK loader. Confirms Datadog RUM is deployed.
+    action: >-
+      See Datadog RUM findings. Audit SDK configuration.
+
+  - pattern: "userway.org"
+    name: "UserWay"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ADA
+      - ECPA
+    description: >-
+      UserWay accessibility widget. Loads a JavaScript overlay that modifies page DOM, captures user
+      interaction telemetry, and transmits usage data back to UserWay servers. Marketed as ADA/WCAG
+      compliance, but multiple federal courts have ruled that accessibility overlays of this type do
+      not establish ADA compliance and may themselves create accessibility barriers. The data
+      collection happens regardless of whether the widget is activated by the user. UserWay operates
+      as an independent controller or processor depending on contract terms.
+    action: >-
+      (1) Verify ADA compliance claims independently: overlay widgets are not a substitute for native
+      accessibility remediation and have been treated as ineffective in cases including Murphy v.
+      Eyebobs and others; (2) disclose UserWay by name in your privacy policy; (3) confirm the
+      contractual relationship (processor vs. controller); (4) audit what user interaction data is
+      transmitted; (5) verify CMP gating if non-essential.
+
+  - pattern: "cdn.userway.org"
+    name: "UserWay (CDN)"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+      - ADA
+    description: >-
+      UserWay accessibility widget CDN.
+    action: >-
+      See UserWay findings.
+
+  - pattern: "api.userway.org"
+    name: "UserWay (API)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ADA
+    description: >-
+      UserWay API endpoint for widget configuration and telemetry.
+    action: >-
+      See UserWay findings.
+
+  - pattern: "cookieyes.com"
+    name: "CookieYes"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      CookieYes consent management platform. Provides cookie banner, consent recording, and GPC
+      detection. The CMP itself is a compliance tool, but its presence does not validate compliance:
+      configuration determines whether it actually enforces consent on tracking scripts. Verify that
+      consent is opt-in by default in CCPA/GDPR jurisdictions, that GPC detection is enabled, and that
+      tag-firing actually waits for consent.
+    action: >-
+      (1) Confirm CookieYes loads before any tracking script; (2) verify GPC detection is enabled in
+      the CookieYes dashboard; (3) audit which tracking categories require affirmative consent vs.
+      legitimate interest; (4) confirm consent records are retained for the required period; (5) test
+      the opt-out workflow end-to-end.
+
+  - pattern: "cdn-cookieyes.com"
+    name: "CookieYes (CDN)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      CookieYes CMP CDN endpoint.
+    action: >-
+      See CookieYes findings.
+
+  - pattern: "log.cookieyes.com"
+    name: "CookieYes (Telemetry)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      CookieYes telemetry/logging endpoint. Receives consent decision events and configuration data.
+    action: >-
+      See CookieYes findings.
+
+  - pattern: "directory.cookieyes.com"
+    name: "CookieYes (Directory)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      CookieYes vendor directory endpoint.
+    action: >-
+      See CookieYes findings.
+
+  - pattern: "cookielaw.org"
+    name: "OneTrust (CookiePro)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      OneTrust CookiePro / CookieLaw consent management platform. Industry-standard CMP. The CMP
+      itself is a compliance tool; presence does not validate compliance. Configuration determines
+      whether it actually enforces consent.
+    action: >-
+      (1) Confirm OneTrust loads before any tracking script; (2) verify GPC detection is enabled; (3)
+      audit consent category assignments for each tracker; (4) confirm opt-out propagation to
+      server-side destinations.
+
+  - pattern: "geolocation.onetrust.com"
+    name: "OneTrust (Geolocation)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      OneTrust geolocation lookup endpoint. Used to determine which consent framework applies (GDPR
+      vs. CCPA vs. unregulated) based on visitor IP.
+    action: >-
+      See OneTrust findings.
+
+  - pattern: "tealiumiq.com"
+    name: "Tealium iQ (TMS)"
+    category: "Tag Management"
+    cc: t
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Tealium iQ tag management system. Loads and manages browser-side tags including advertising
+      pixels, analytics, and personalization scripts. Has the same compliance posture as Google Tag
+      Manager: the risk is in what tags are deployed, not the TMS itself. However, Tealium also
+      operates a server-side CDP (AudienceStream) and a server-side tag delivery layer (EventStream)
+      that can forward events to destinations without browser visibility, similar to sGTM.
+    action: >-
+      (1) Audit all tags configured in Tealium iQ; (2) verify each tag is consent-gated; (3) check
+      whether AudienceStream or EventStream is enabled and audit server-side destinations; (4) confirm
+      Tealium configuration honors GPC and CCPA opt-out signals.
+
+  - pattern: "tiqcdn.com"
+    name: "Tealium iQ (CDN)"
+    category: "Tag Management"
+    cc: t
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Tealium iQ CDN endpoint serving utag.js (the Tealium browser library).
+    action: >-
+      See Tealium iQ findings.
+
+  - pattern: "tealium.com"
+    name: "Tealium"
+    category: "Tag Management"
+    cc: t
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Tealium primary domain.
+    action: >-
+      See Tealium iQ findings.
+
+  - pattern: "invoca.com"
+    name: "Invoca"
+    category: "Call Tracking"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      Invoca call tracking and conversation analytics. Assigns dynamic phone numbers to website
+      visitors for ad attribution, records calls, and runs AI analysis on call audio. California is a
+      two-party consent state for call recording (CIPA § 632), and recording happens server-side
+      without the caller being notified by the browser. Recent CIPA case law on AI conversation
+      analytics is developing: Taylor v. ConverseNow Technologies, Inc., 25-cv-00990-SI (N.D. Cal.
+      Aug. 11, 2025), denied a motion to dismiss CIPA § 631 and § 632 claims against an AI voice
+      assistant provider that processed customer calls for restaurants. The case turns on whether the
+      AI provider is treated as a separate "third party" intercepting communications versus a service
+      provider acting on the deploying business's behalf. Whether specific Invoca implementations face
+      similar exposure depends on configuration, recording disclosure, and contractual relationship.
+    action: >-
+      (1) Audit whether call recording is enabled and verify two-party consent compliance for all
+      jurisdictions where the calling or called party may be located; (2) implement a recorded-call
+      disclosure on every page where Invoca dynamic numbers appear; (3) train phone agents to obtain
+      verbal consent at call start; (4) disclose Invoca by name in your privacy policy including the
+      call recording and AI analysis; (5) verify Invoca DPA terms cover the conversation content as
+      personal information; (6) if financial product calls are routed through Invoca, review under
+      GLBA Safeguards Rule.
+
+  - pattern: "invocacdn.com"
+    name: "Invoca (CDN)"
+    category: "Call Tracking"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      Invoca CDN endpoint serving the dynamic-number-insertion JavaScript.
+    action: >-
+      See Invoca findings.
+
+  - pattern: "adsrvr.org"
+    name: "The Trade Desk"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      The Trade Desk (TTD) demand-side platform. Independent advertising controller that builds
+      cross-site behavioral profiles for programmatic advertising. Cookie-based and TTDID/UID 2.0
+      identifier-based. Definitively constitutes "sharing" under CPRA. The Trade Desk pixel often
+      loads via piggyback from other ad partners, not directly, so its presence may indicate
+      downstream ad-stack relationships you have not documented.
+    action: >-
+      (1) Identify the upstream tag that loads The Trade Desk pixel (it is often piggybacked through
+      Google Ads, programmatic ad partners, or a DSP wrapper); (2) disclose The Trade Desk by name in
+      your privacy policy under advertising partners; (3) suppress on CCPA opt-out and GPC; (4)
+      confirm contractual relationship and DPA status.
+
+  - pattern: "insight.adsrvr.org"
+    name: "The Trade Desk (Insight)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      The Trade Desk Insight pixel endpoint for audience matching and conversion tracking.
+    action: >-
+      See The Trade Desk findings.
+
+  - pattern: "mountain.com"
+    name: "Mountain (Adtech)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Mountain.com advertising technology platform. Programmatic advertising / DSP infrastructure.
+      Constitutes "sharing" under CPRA. Smaller player than Google/Meta/TTD, which means contractual
+      relationships may be less standardized and DPA terms may be looser.
+    action: >-
+      (1) Identify the upstream tag or partner that loads Mountain; (2) confirm the contractual
+      relationship and DPA terms; (3) disclose by name in privacy policy if retained; (4) consider
+      removal if not generating documented value; (5) suppress on CCPA opt-out and GPC.
+
+  - pattern: "eppo.cloud"
+    name: "Eppo"
+    category: "Experimentation"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Eppo experimentation and feature flagging platform. Assigns user variants for A/B testing and
+      reports outcome metrics. Typically a processor relationship under DPA. Privacy concern is the
+      user-variant assignment, which acts as a persistent identifier and is often linked to backend
+      user IDs.
+    action: >-
+      (1) Disclose experimentation in privacy policy; (2) confirm Eppo DPA terms are executed; (3)
+      audit what user identifiers are sent to Eppo and whether they map back to PII; (4) verify
+      variant assignments are not used for advertising targeting.
+
+  - pattern: "geteppo.com"
+    name: "Eppo (CDN)"
+    category: "Experimentation"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Eppo CDN endpoint.
+    action: >-
+      See Eppo findings.
+
+  - pattern: "trustpilot.com"
+    name: "Trustpilot (Widget)"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Trustpilot review widget. Loads from Trustpilot CDN and reports widget impressions and
+      interactions back. Lower privacy risk than ad pixels because Trustpilot is a processor for the
+      review display, but the widget loads independent JavaScript that should be reviewed.
+    action: >-
+      Disclose Trustpilot widget in privacy policy. Verify CMP gating if non-essential.
+
+  - pattern: "redditstatic.com"
+    name: "Reddit Pixel (CDN)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Reddit static asset CDN. Often loads Reddit Pixel JavaScript.
+    action: >-
+      See Reddit Pixel findings.
+
+  - pattern: "pixel-config.reddit.com"
+    name: "Reddit Pixel (Config)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Reddit Pixel configuration endpoint. Confirms Reddit Pixel is deployed.
+    action: >-
+      See Reddit Pixel findings.
+
+  - pattern: "static.hotjar.com"
+    name: "Hotjar (Static)"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      Hotjar static asset CDN. <<SR_FRAMING>>
+    action: >-
+      <<SR_ACTION>>
+
+  - pattern: "surveystats.hotjar.io"
+    name: "Hotjar (Surveys)"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      Hotjar survey statistics endpoint. Receives survey response data which may include PII depending
+      on survey design. <<SR_FRAMING>>
+    action: >-
+      <<SR_ACTION>> For surveys specifically: audit configurations for PII collection and disclose
+      surveys in privacy policy.
+
+  - pattern: "scripts.clarity.ms"
+    name: "Microsoft Clarity (CDN)"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      Microsoft Clarity script CDN. <<SR_FRAMING>>
+    action: >-
+      <<SR_ACTION>> See the Microsoft Clarity entry for the independent-controller note specific to
+      Microsoft.
+
+  - pattern: "api.segment.io"
+    name: "Segment (Data Plane)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Segment data plane endpoint (api.segment.io). Receives browser-emitted events and forwards them
+      server-side to configured cloud-mode destinations (Meta CAPI, Google Ads API, TikTok Events API,
+      etc.). The destinations themselves are invisible in this HAR. Consent enforcement must happen at
+      the Segment workspace level, not the browser, for cloud-mode destinations.
+    action: >-
+      (1) Audit Segment workspace destinations; (2) verify consent enforcement at the destination
+      level; (3) confirm DPA covers data plane forwarding; (4) check integrations object in event
+      payloads in the CDP Events tab.
+
+  - pattern: "px.ads.linkedin.com"
+    name: "LinkedIn Insight Tag"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      LinkedIn Insight Tag conversion and audience tracking endpoint. Builds LinkedIn audience matches
+      and tracks conversions for LinkedIn Ads campaigns. Constitutes "sharing" under CPRA.
+    action: >-
+      Disclose LinkedIn Insight Tag in privacy policy. Suppress on CCPA opt-out and GPC. Confirm DPA
+      terms.
+
+  - pattern: "px4.ads.linkedin.com"
+    name: "LinkedIn Insight Tag (v4)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      LinkedIn Insight Tag v4 endpoint.
+    action: >-
+      See LinkedIn Insight Tag findings.
+
+  - pattern: "snap.licdn.com"
+    name: "LinkedIn (Snap CDN)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      LinkedIn CDN endpoint (Snap, the LinkedIn pixel CDN). Often loads the underlying Insight Tag
+      JavaScript.
+    action: >-
+      See LinkedIn Insight Tag findings.
+
+  - pattern: "dwin1.com"
+    name: "Awin"
+    category: "Affiliate"
+    cc: a
+    risk: high
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Awin affiliate network tracking domain. Awin sets first-party-style cookies (via dwin1.com but
+      configured as effectively first-party for attribution), tracks affiliate click-to-conversion
+      attribution, and pays publishers based on the resulting attribution data. Under CPRA, Awin and
+      the merchant operate as independent controllers for the personal information exchanged: visitor
+      IP, user agent, referring affiliate ID, transaction value, and (where configured) hashed contact
+      identifiers. This is a "sharing" relationship for cross-context behavioral advertising, not a
+      service-provider relationship. Sub-publishers and downstream networks (including R.O.EYE Limited
+      / SingleView and other Awin "private network" sub-affiliates) receive the same data under their
+      own controller designations.
+    action: >-
+      (1) Confirm Awin is disclosed by name in the privacy policy and that the
+      controller-to-controller relationship is correctly described; (2) audit the Awin sub-publisher
+      and private-network configuration to identify every downstream affiliate receiving data; (3)
+      verify the CMP suppresses Awin tracking on CCPA opt-out and GPC, including the dwin1.com cookie;
+      (4) review consent flows for cross-context behavioral advertising "sharing" disclosure
+      requirements.
+
+  - pattern: "roeye.com"
+    name: "R.O.EYE Limited (SingleView)"
+    category: "Affiliate"
+    cc: a
+    risk: high
+    regs:
+      - US State Privacy
+      - ECPA
+      - GDPR
+    description: >-
+      R.O.EYE Limited is a UK-based affiliate network operating SingleView technology, often deployed
+      as a sub-publisher within larger affiliate networks such as Awin. R.O.EYE acts as an independent
+      data controller for the attribution data it receives, not as a service provider to the merchant.
+      Under CPRA, this controller-to-controller transmission falls within the "sharing" definition for
+      cross-context behavioral advertising. The "private network" structure of Awin-routed traffic
+      means R.O.EYE may receive merchant click data without appearing in standard affiliate-disclosure
+      language. GDPR exposure attaches for any EU visitor data routed through R.O.EYE.
+    action: >-
+      (1) Disclose R.O.EYE Limited / SingleView by name in your privacy policy, with the
+      controller-to-controller relationship correctly described; (2) confirm a
+      controller-to-controller data sharing agreement is in place; (3) audit whether R.O.EYE is
+      enabled in your Awin configuration and whether it is necessary for your attribution model; (4)
+      verify CMP suppression for CCPA opt-out and GPC; (5) for EU visitors, confirm GDPR Article 28
+      controller framework or Standard Contractual Clauses as appropriate.
+
+  - pattern: "roeyecdn.com"
+    name: "R.O.EYE Limited (CDN)"
+    category: "Affiliate"
+    cc: a
+    risk: high
+    regs:
+      - US State Privacy
+      - ECPA
+      - GDPR
+    description: >-
+      R.O.EYE Limited CDN endpoint serving the SingleView affiliate tracking script.
+    action: >-
+      See R.O.EYE Limited findings.
+
+  - pattern: "pixel.tapad.com"
+    name: "Tapad (Experian)"
+    category: "Cross-Device"
+    cc: a
+    risk: high
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Tapad cross-device device-graph and identity-resolution platform, owned by Experian. Tapad
+      builds probabilistic and deterministic graphs linking devices (desktop, mobile, CTV) to the same
+      person, then licenses that graph to advertisers and publishers for cross-context targeting and
+      attribution. The pixel.tapad.com endpoint registers visitor signals into the Tapad graph. Under
+      CPRA this is a classic "sharing" relationship for cross-context behavioral advertising, and
+      Experian functions as an independent controller for the device-graph data it builds.
+    action: >-
+      (1) Disclose Tapad / Experian by name in your privacy policy including the cross-device graph
+      contribution; (2) audit whether Tapad is required for your attribution model or whether it can
+      be removed; (3) confirm CMP suppression on CCPA opt-out and GPC; (4) review the Experian
+      relationship under CPRA "sharing" obligations and confirm a controller-to-controller data
+      sharing agreement.
+
+  - pattern: "go2sdk.com"
+    name: "Tune (HasOffers)"
+    category: "Affiliate"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Tune (formerly HasOffers, acquired by Branch in 2022) affiliate and mobile attribution platform.
+      The go2sdk.com domain is Tune's redirect and tracking infrastructure for affiliate click
+      attribution and mobile app install tracking. Operates as a processor in most merchant
+      configurations but the downstream affiliate publishers reachable through the Tune network can
+      independently process the data.
+    action: >-
+      (1) Disclose Tune by name and confirm processor-vs-controller designation for your specific
+      configuration; (2) audit the affiliate publisher list reachable through your Tune offers and
+      confirm DPAs or controller agreements as appropriate; (3) verify CMP suppression on CCPA opt-out
+      and GPC.
+
+  - pattern: "mgln.ai"
+    name: "Magellan AI"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Magellan AI podcast and audio advertising attribution platform. Tracks website visitors back to
+      podcast and streaming-audio ad impressions to attribute conversions to specific audio campaigns.
+      Constitutes cross-context behavioral advertising under CPRA: the attribution data ties web
+      behavior to audio listening behavior collected through a separate channel.
+    action: >-
+      (1) Disclose Magellan AI by name in your privacy policy including the audio-to-web cross-context
+      attribution; (2) confirm DPA terms and controller-vs-processor designation; (3) verify CMP
+      suppression on CCPA opt-out and GPC.
+
+  - pattern: "cdn.mgln.ai"
+    name: "Magellan AI (CDN)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Magellan AI script CDN.
+    action: >-
+      See Magellan AI findings.
+
+  - pattern: "convertexperiments.com"
+    name: "Convert.com"
+    category: "Experimentation"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Convert.com A/B testing and experimentation platform. Similar privacy posture to VWO and
+      Optimizely: assigns users to test variants and tracks subsequent behavior to measure variant
+      performance. Standard processor relationship under DPA. Privacy exposure depends on whether
+      visitor identifiers and event properties transmitted to Convert include PII.
+    action: >-
+      (1) Audit visitor properties and event data sent to Convert for PII; (2) confirm DPA terms cover
+      the experimentation data; (3) disclose Convert as a sub-processor in your privacy policy; (4)
+      verify CMP gating for the Convert SDK.
+
+  - pattern: "intercomcdn.com"
+    name: "Intercom (CDN)"
+    category: "Marketing / Chat"
+    cc: e
+    risk: medium
+    regs:
+      - US State Privacy
+      - CAN-SPAM
+    description: >-
+      Intercom CDN domain used for static asset delivery, attachment downloads, and Messenger UI
+      resources. Confirms Intercom is deployed. Same privacy posture as the primary Intercom entry.
+    action: >-
+      See Intercom findings.
+
+  - pattern: "fontawesome.com"
+    name: "FontAwesome"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      FontAwesome icon kit and font CDN. Transmits visitor IP and User-Agent to FontAwesome on each
+      request. Same general GDPR exposure profile as Google Fonts (see LG München I, 20.01.2022, Az. 3
+      O 17493/20 for the analogous Google Fonts ruling), though FontAwesome's commercial model is
+      subscription-based rather than advertising-funded, which reduces the cross-context behavioral
+      advertising concern.
+    action: >-
+      (1) Consider self-hosting FontAwesome assets to eliminate the third-party data transfer; (2) if
+      retained, disclose FontAwesome as a sub-processor; (3) for EU visitors, consider gating font kit
+      loading on consent.
+
+  - pattern: "ka-p.fontawesome.com"
+    name: "FontAwesome (Kit)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      FontAwesome kit endpoint.
+    action: >-
+      See FontAwesome findings.
+
+  - pattern: "kit.fontawesome.com"
+    name: "FontAwesome (Kit Loader)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      FontAwesome kit loader endpoint.
+    action: >-
+      See FontAwesome findings.
+
+  - pattern: "website-files.com"
+    name: "Webflow (Hosting)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Webflow hosting infrastructure CDN. Serves site assets (HTML, CSS, JS, images) for sites built
+      on the Webflow platform. Webflow operates as a processor under its DPA for hosted sites. The
+      hosting itself is a low-risk processor activity, but Webflow has visibility into all site
+      traffic and any forms submitted through Webflow form handlers.
+    action: >-
+      (1) Confirm Webflow DPA is executed; (2) audit whether site forms route through Webflow form
+      handler (which sends data to Webflow servers) or directly to your own backend; (3) disclose
+      Webflow as a sub-processor in your privacy policy.
+
+  - pattern: "webflow.com"
+    name: "Webflow"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Webflow primary domain.
+    action: >-
+      See Webflow findings.
+
+  - pattern: "builder.io"
+    name: "Builder.io (CMS)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Builder.io headless CMS and visual editor. Delivers page content via API, often with
+      personalization based on user attributes. Privacy posture depends on configuration: when used
+      for content delivery only it is a low-risk processor; when used for visitor personalization
+      based on identifiers, the targeting data is subject to CCPA disclosure.
+    action: >-
+      (1) Audit Builder.io configuration for visitor personalization features; (2) confirm DPA terms
+      cover the visitor attributes transmitted for targeting; (3) disclose as a sub-processor in your
+      privacy policy.
+
+  - pattern: "bat.bing.net"
+    name: "Microsoft UET (Bing Network)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Microsoft Universal Event Tracking on the bat.bing.net domain. Sister endpoint to bat.bing.com.
+      Same Microsoft Advertising tracking infrastructure.
+    action: >-
+      See Microsoft UET findings.
+
+  - pattern: "jsdelivr.net"
+    name: "jsDelivr (Public CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      jsDelivr public JavaScript CDN. Open-source, community-operated CDN that serves packages from
+      npm and GitHub. Lower privacy risk than commercial CDNs, but the requests still expose IP
+      address and referrer to jsDelivr operators (Cloudflare and Fastly as the underlying providers).
+      Identify which package is being loaded from jsDelivr by inspecting the URL paths.
+    action: >-
+      Identify the specific packages loaded from jsDelivr. Consider hosting them yourself if the
+      dependency is operationally important or if reducing third-party dependencies is a priority.
+
+  - pattern: "cloudfront.net"
+    name: "Amazon CloudFront (Generic)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Amazon CloudFront CDN endpoint. The specific service is unclear from the domain alone. Common
+      uses are SaaS asset hosting (Webflow distributions appear as d*.cloudfront.net hash IDs), adtech
+      infrastructure, and custom application CDNs. Identify the underlying service by inspecting what
+      is being loaded.
+    action: >-
+      Identify the underlying service or vendor that owns this CloudFront distribution. WHOIS will not
+      help (Amazon registers all CloudFront distributions); inspect the content served and the Referer
+      chain in your tag manager.
+
+  - pattern: "cloudinary.com"
+    name: "Cloudinary"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Cloudinary image and media CDN. Receives image requests (including any image URLs that contain
+      user-identifiable parameters), and transformations are computed server-side. Standard processor
+      relationship under DPA. Low privacy risk for typical image delivery, but image URLs that include
+      user IDs or session tokens leak that data to Cloudinary.
+    action: >-
+      (1) Confirm Cloudinary DPA is executed; (2) audit image URL patterns for embedded identifiers
+      that should not leave your infrastructure; (3) disclose as a sub-processor in your privacy
+      policy.
+
+  - pattern: "res.cloudinary.com"
+    name: "Cloudinary (Delivery)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Cloudinary image delivery CDN.
+    action: >-
+      See Cloudinary findings.
+
+  - pattern: "niceincontact.com"
+    name: "NICE inContact / CXone (Customer Service + Recording)"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+      - GLBA
+    description: >-
+      NICE inContact (CXone) is a contact center and customer service platform that includes chat,
+      voice, and digital channels with call recording, session replay, agent screen recording, and
+      AI-driven conversation analytics. The shared.js storage module enables cross-session interaction
+      recording. Real-time recording of visitor interactions triggers ECPA and CIPA wiretapping
+      analysis -- the same exposure as session replay tools like Hotjar and FullStory. See Calhoun v.
+      Google, LLC, 526 F. Supp. 3d 605 (N.D. Cal. 2021). CIPA two-party consent obligations attach
+      where the deploying business is in or contacts a two-party consent state. GLBA implications
+      attach when customer service conversations cover NPI including financial products, account
+      details, or payment information. Standard processor relationship under DPA but the data handled
+      is sensitive.
+    action: >-
+      (1) Verify NICE inContact DPA covers call recording, transcription, and AI analytics; (2)
+      confirm two-party consent disclosure is implemented for all recorded interactions where any
+      party may be in a two-party state; (3) audit which channels (chat, voice, email) are routed
+      through NICE and how data is retained; (4) if financial product information is discussed, review
+      under GLBA Safeguards Rule; (5) disclose NICE inContact by name in your privacy policy as the
+      customer service infrastructure provider.
+
+  - pattern: "launchdarkly.com"
+    name: "LaunchDarkly"
+    category: "Experimentation"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      LaunchDarkly feature flagging and experimentation platform. Assigns user variants for feature
+      rollouts and A/B tests. Standard processor relationship under DPA. Privacy concern is the
+      user-context object sent to LaunchDarkly, which often includes user ID, email, account
+      information, and custom attributes used for targeting.
+    action: >-
+      (1) Audit the user context object sent to LaunchDarkly: minimize to operational identifiers; (2)
+      confirm LaunchDarkly DPA is executed; (3) disclose as a sub-processor in your privacy policy.
+
+  - pattern: "fonts.googleapis.com"
+    name: "Google Fonts (CSS)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Google Fonts CSS delivery endpoint. Transmits visitor IP address and User-Agent to Google with
+      each request. The Landgericht München I (Regional Court of Munich) ruled in LG München I,
+      20.01.2022, Az. 3 O 17493/20 that loading Google Fonts from this endpoint without consent
+      violates GDPR because the IP transmission has no legitimate basis. That decision triggered a
+      wave of warning letters in Germany. For US visitors the issue is less acute, but the
+      cross-border data transfer to Google still requires DPA coverage.
+    action: >-
+      (1) Consider self-hosting fonts to eliminate the Google data transfer entirely (often a quick
+      deployment change); (2) if retaining, confirm the Google Fonts DPA is in place and disclose
+      Google as a sub-processor; (3) for EU visitors, consider gating font loading on consent.
+
+  - pattern: "fonts.gstatic.com"
+    name: "Google Fonts (Files)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Google Fonts font file delivery endpoint.
+    action: >-
+      See Google Fonts findings.
+
+  - pattern: "res-1.cdn.office.net"
+    name: "Microsoft Office (CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Microsoft Office CDN endpoint. Typically loaded by embedded Office content, Teams chat embeds,
+      or Microsoft authentication redirects. Identify the specific service by inspecting what is being
+      loaded.
+    action: >-
+      Identify the underlying Microsoft service. Confirm DPA terms cover the integration.
+
+  - pattern: "cdn.office.net"
+    name: "Microsoft Office (CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Microsoft Office CDN endpoint.
+    action: >-
+      See Microsoft Office findings.
+
+  - pattern: "zendesk.com"
+    name: "Zendesk"
+    category: "Call Tracking"
+    cc: a
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+    description: >-
+      Zendesk customer service platform. Provides chat widget, ticketing, knowledge base, and AI
+      agents. Chat interactions are recorded and may contain PII (account numbers, financial details,
+      health information). California is a two-party consent state and chat transcripts are subject to
+      CIPA exposure when used for service-improvement or AI training. The chat widget itself captures
+      user behavior on the host page (clicks, page views, identifiers) regardless of whether the
+      visitor opens it.
+    action: >-
+      (1) Verify two-party consent disclosure is implemented for chat sessions before any data is
+      captured; (2) audit Zendesk DPA terms for chat content, recording, and AI training; (3) confirm
+      chat widget honors CCPA opt-out and GPC signals; (4) disclose Zendesk by name in your privacy
+      policy as customer service infrastructure.
+
+  - pattern: "zdassets.com"
+    name: "Zendesk (Assets)"
+    category: "Call Tracking"
+    cc: a
+    risk: low
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+    description: >-
+      Zendesk static asset CDN. Loads the Zendesk chat widget and other Zendesk JavaScript.
+    action: >-
+      See Zendesk findings.
+
+  - pattern: "cloud.es.io"
+    name: "Elastic APM (Cloud)"
+    category: "Error Tracking"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Elastic Application Performance Monitoring (APM) cloud endpoint. Browser SDK that captures
+      performance traces, errors, network requests, and user interactions. Similar privacy posture to
+      Datadog RUM and Sentry: standard DPA processor relationship, but the SDK can capture arbitrary
+      PII from page state, URLs, and user contexts. The cloud.es.io domain indicates Elastic Cloud
+      hosted deployment; self-hosted Elastic APM uses customer-controlled endpoints.
+    action: >-
+      (1) Audit Elastic APM RUM SDK configuration for PII capture in transaction labels, custom
+      contexts, and user data; (2) confirm DPA terms cover the cloud deployment; (3) verify session
+      sampling is enabled (full-fidelity sessions for every visitor amplify exposure); (4) disclose
+      Elastic APM by name in your privacy policy as a sub-processor.
+
+  - pattern: "elastic.co"
+    name: "Elastic"
+    category: "Error Tracking"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Elastic primary domain.
+    action: >-
+      See Elastic APM findings.
+
+  - pattern: "amplitude.com"
+    name: "Amplitude"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+    description: >-
+      Amplitude product analytics platform. Captures event-level user behavior, feature usage, and
+      funnel analysis. Standard DPA processor relationship for analytics. Amplitude Session Replay
+      (separate product) captures DOM recordings and carries the same CIPA and ECPA wiretapping
+      exposure as Microsoft Clarity, Hotjar, and FullStory. Amplitude Experiment (the
+      lab/experimentation product) overlaps with Eppo/LaunchDarkly. The various Amplitude subdomains
+      indicate different product modules.
+    action: >-
+      (1) Identify which Amplitude products are deployed: core analytics, Session Replay, Experiment,
+      CDP; (2) for Session Replay, audit privacy masking and verify the deployment scope excludes
+      sensitive pages (financial, health, credentials); (3) confirm DPA covers all active products;
+      (4) disclose Amplitude by name in your privacy policy.
+
+  - pattern: "cdn.amplitude.com"
+    name: "Amplitude (CDN)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Amplitude SDK CDN.
+    action: >-
+      See Amplitude findings.
+
+  - pattern: "api2.amplitude.com"
+    name: "Amplitude (Events API)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Amplitude event ingestion endpoint. Receives user identifiers, event names, and event
+      properties.
+    action: >-
+      See Amplitude findings.
+
+  - pattern: "api.lab.amplitude.com"
+    name: "Amplitude Experiment"
+    category: "Experimentation"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Amplitude Experiment endpoint for feature flagging and experimentation. Similar privacy posture
+      to LaunchDarkly and Eppo: user-context object sent for variant assignment often includes user ID
+      and account attributes.
+    action: >-
+      (1) Audit user context sent to Amplitude Experiment; (2) confirm DPA covers experimentation
+      product; (3) disclose in privacy policy.
+
+  - pattern: "heapanalytics.com"
+    name: "Heap Analytics"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+      - CIPA
+    description: >-
+      Heap product analytics platform. Distinguishing characteristic is autocapture: by default Heap
+      records every user interaction (clicks, form interactions, page views, scrolls) without
+      per-event instrumentation. This creates a larger PII surface than instrumented analytics
+      platforms because field interactions and click targets often contain sensitive context. Heap
+      operates as a processor under its standard DPA. Heap Session Replay (separate product, opt-in)
+      captures DOM recordings and carries the same wiretapping exposure category as Microsoft Clarity,
+      Hotjar, and FullStory. Identity API (heap.identify) ties anonymous sessions to user IDs once
+      known.
+    action: >-
+      (1) Confirm Heap data masking settings exclude sensitive form fields and credential entry pages;
+      (2) determine whether Session Replay is enabled and audit its deployment scope; (3) verify DPA
+      covers autocapture data and any optional products; (4) disclose Heap by name in your privacy
+      policy; (5) confirm consent gating in the CMP and verify autocapture suppression for opted-out
+      users.
+
+  - pattern: "cdn.heapanalytics.com"
+    name: "Heap Analytics (CDN)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Heap Analytics SDK CDN. Confirms Heap is deployed.
+    action: >-
+      See Heap Analytics findings.
+
+  - pattern: "heapanalytics.com/h?"
+    name: "Heap Analytics (Events)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      Heap event collection endpoint. Receives autocapture event stream from the browser including
+      user properties and event properties.
+    action: >-
+      See Heap Analytics findings. Audit the property payload in the CDP Events tab for PII.
+
+  - pattern: "sr-client-cfg.amplitude.com"
+    name: "Amplitude Session Replay (Config)"
+    category: "Session Replay"
+    cc: s
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      Amplitude Session Replay configuration endpoint. The "sr" prefix indicates Session Replay is
+      enabled. <<SR_FRAMING>> Amplitude Session Replay specifically: combined with Amplitude
+      analytics, sessions can be replayed with full event-level context overlaid, which amplifies the
+      volume of personal information available in a single recording.
+    action: >-
+      <<SR_ACTION>> For Amplitude Session Replay specifically: verify privacy masking is enabled in
+      the project settings (default is unmasked).
+
+  - pattern: "visualwebsiteoptimizer.com"
+    name: "VWO (Visual Website Optimizer)"
+    category: "Experimentation"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      VWO (Visual Website Optimizer) A/B testing, personalization, and heatmap platform. Captures user
+      interaction data (clicks, scrolls, form interactions) for experimentation analysis. VWO also
+      offers Session Recording as a separate product, which carries CIPA/ECPA exposure equivalent to
+      Hotjar and FullStory. The dev.visualwebsiteoptimizer.com subdomain indicates a non-production
+      environment.
+    action: >-
+      (1) Confirm whether VWO Session Recording is enabled and audit its deployment scope; (2) verify
+      DPA terms cover experimentation, heatmaps, and session recording; (3) disclose VWO by name in
+      your privacy policy; (4) confirm CMP gates VWO if non-essential; (5) note that this capture
+      shows a dev subdomain. Confirm whether production deployment is on the same vendor.
+
+  - pattern: "vwo.com"
+    name: "VWO"
+    category: "Experimentation"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      VWO primary domain.
+    action: >-
+      See VWO findings.
+
+  - pattern: "analytics.ahrefs.com"
+    name: "Ahrefs Analytics"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Ahrefs Analytics. Marketed as a privacy-friendly Google Analytics alternative. The Ahrefs script
+      captures page views and basic interaction data; the vendor claims no cookies and no PII
+      collection. Lower privacy risk profile than GA4 but still a third-party data egress that
+      requires disclosure.
+    action: >-
+      (1) Confirm Ahrefs DPA terms; (2) disclose Ahrefs as a sub-processor in your privacy policy; (3)
+      verify the no-cookie claim in your CMP audit.
+
+  - pattern: "ahrefs.com"
+    name: "Ahrefs"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Ahrefs primary domain.
+    action: >-
+      See Ahrefs findings.
+
+  - pattern: "youtube.com"
+    name: "YouTube (Embed)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - VPPA
+      - US State Privacy
+      - COPPA
+    description: >-
+      YouTube video embed. The standard youtube.com embed sets DoubleClick cookies and reports
+      playback events to Google for advertising purposes. Two distinct exposure profiles: (1)
+      advertising tracking, which constitutes "sharing" under CPRA and creates the same disclosure and
+      opt-out obligations as any other Google advertising surface; and (2) the Video Privacy
+      Protection Act (VPPA, 18 U.S.C. § 2710), which prohibits "video tape service providers" from
+      disclosing personally identifiable viewing information without consent. Recent VPPA cases
+      against Patreon, the Washington Post, NPR, and others have used embedded video pixels as the
+      disclosure vector. There is a current circuit split on what counts as VPPA disclosure of
+      personally identifiable information; the issue is live in active litigation. COPPA exposure
+      attaches if the site is child-directed or knowingly collects from minors. The privacy-preserving
+      alternative is youtube-nocookie.com, which does not set DoubleClick cookies.
+    action: >-
+      (1) Switch YouTube embeds from youtube.com to youtube-nocookie.com to eliminate the DoubleClick
+      cookie scope; (2) verify CMP suppresses YouTube embeds on CCPA opt-out and GPC; (3) disclose
+      YouTube by name in your privacy policy as an advertising-tracking sub-processor and address
+      video viewing data specifically given live VPPA litigation; (4) if the site has any
+      minor-directed content, conduct a COPPA review of YouTube embeds; (5) review whether your
+      privacy policy adequately discloses video viewing data sharing to defeat the VPPA "knowing
+      disclosure" element.
+
+  - pattern: "youtube-nocookie.com"
+    name: "YouTube (No-Cookie Embed)"
+    category: "Advertising"
+    cc: an
+    risk: medium
+    regs:
+      - VPPA
+      - US State Privacy
+    description: >-
+      YouTube no-cookie embed domain. Google's privacy-preserving alternative to youtube.com embeds.
+      Still transmits visitor IP and User-Agent to Google but does not set DoubleClick cookies.
+      Reduces advertising exposure substantially compared to the standard embed, but VPPA exposure for
+      video viewing data disclosure is not eliminated.
+    action: >-
+      Confirm DPA terms with Google. Disclose YouTube as a sub-processor and address video viewing
+      data specifically.
+
+  - pattern: "i.ytimg.com"
+    name: "YouTube (Image CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      YouTube image CDN. Serves video thumbnails for embeds. Discloses page-load behavior to Google.
+    action: >-
+      See YouTube findings.
+
+  - pattern: "jnn-pa.googleapis.com"
+    name: "Google API (Generic)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google API endpoint. The specific service is unclear from the domain alone. Often loaded by
+      Google Maps, YouTube embeds, or Google authentication. Identify the underlying service by
+      inspecting what is being loaded.
+    action: >-
+      Identify the underlying Google service. Confirm DPA terms cover the integration.
+
+  - pattern: "ajax.googleapis.com"
+    name: "Google Hosted Libraries"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google Hosted Libraries CDN. Serves popular open-source JavaScript libraries (jQuery, Angular,
+      etc.) from Google infrastructure. Each request transmits visitor IP and User-Agent to Google.
+      Same German LG München I 2022 ruling concerns as Google Fonts: loading from Google CDNs without
+      consent has been ruled a GDPR violation in EU courts.
+    action: >-
+      Consider self-hosting these libraries to eliminate the Google data transfer. If retained,
+      disclose Google as a sub-processor.
+
+  - pattern: "shopifysvc.com"
+    name: "Shopify (Service)"
+    category: "Hosting"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Shopify service infrastructure endpoint. The monorail-edge and otlp-http subdomains indicate
+      Shopify telemetry and observability pipelines. For sites hosted on Shopify, Shopify acts as a
+      processor under DPA for storefront data and a controller for some of its own analytics use. The
+      Shopify storefront data (product views, cart events, customer events) is sent to Shopify
+      regardless of CMP state because it is treated as essential platform infrastructure.
+    action: >-
+      (1) Confirm Shopify DPA is executed and current; (2) understand that storefront and checkout
+      data goes to Shopify as platform processor; (3) verify any Shopify Audiences or Shopify
+      Marketing pixel configurations align with consent state; (4) disclose Shopify by name in your
+      privacy policy as the e-commerce platform.
+
+  - pattern: "cdn.shopify.com"
+    name: "Shopify (CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Shopify CDN for storefront assets and scripts. Standard processor activity for Shopify-hosted
+      sites.
+    action: >-
+      See Shopify findings.
+
+  - pattern: "shop.app"
+    name: "Shop Pay"
+    category: "Payment"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+      - GLBA
+    description: >-
+      Shop Pay (Shopify's accelerated checkout). Loads the Shop Pay JavaScript bundle and exchanges
+      identifiers with Shopify for one-click checkout. When Shop Pay is enabled, customer
+      phone/email/payment data is shared with Shopify Pay infrastructure for cross-merchant identity.
+      This is "sharing" under CPRA when Shop Pay is used for marketing personalization across the Shop
+      network, which is its default behavior.
+    action: >-
+      (1) Audit Shop Pay configuration: confirm whether cross-merchant identity sharing is enabled;
+      (2) disclose Shop Pay by name in your privacy policy including the cross-merchant identity
+      behavior; (3) verify CMP gating if the site offers opt-out alternatives; (4) confirm GLBA
+      compliance if the site collects financial product information.
+
+  - pattern: "consentmo.com"
+    name: "Consentmo"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Consentmo consent management platform. Shopify-focused CMP available as a Shopify app. Provides
+      cookie banner and consent recording for Shopify storefronts. The CMP itself is a compliance
+      tool; presence does not validate compliance: configuration determines whether it actually
+      enforces consent.
+    action: >-
+      (1) Confirm Consentmo loads before any tracking script; (2) verify GPC detection is enabled; (3)
+      audit consent category assignments for each Shopify-embedded tracker; (4) confirm opt-out
+      propagation works for both browser-side pixels and Shopify Audiences.
+
+  - pattern: "merchant-center-analytics.goog"
+    name: "Google Merchant Center Analytics"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google Merchant Center conversion measurement endpoint. Tracks product impressions and
+      conversions for Google Shopping ads and product feed performance. Constitutes "sharing" under
+      CPRA when used for ad attribution.
+    action: >-
+      Suppress on CCPA opt-out and GPC. Disclose Google Merchant Center in privacy policy. Confirm DPA
+      terms.
+
+  - pattern: "fonts.bunny.net"
+    name: "Bunny Fonts"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Bunny Fonts. Privacy-friendly Google Fonts alternative operated by Bunny.net. Does not log IP
+      addresses or set cookies; marketed as a GDPR-compliant drop-in replacement for Google Fonts.
+      Lower privacy risk than fonts.googleapis.com but still a third-party request that exposes the
+      visitor to Bunny.net infrastructure.
+    action: >-
+      Confirm Bunny.net DPA terms. Disclose Bunny Fonts as a sub-processor.
+
+  - pattern: "storylane.io"
+    name: "Storylane"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Storylane interactive product demo platform. Embeds clickable product walkthroughs on marketing
+      pages. The Storylane embed loads a JavaScript SDK and tracks visitor interactions with the demo.
+      Demo engagement data is sent back to Storylane and is typically used for marketing analytics
+      (which demos converted to leads). Standard processor relationship under DPA.
+    action: >-
+      (1) Confirm Storylane DPA terms cover the visitor interaction data captured; (2) audit which
+      visitor identifiers are sent to Storylane; (3) disclose Storylane as a sub-processor in your
+      privacy policy; (4) verify CMP gates Storylane if non-essential.
+
+  - pattern: "hsforms.com"
+    name: "HubSpot Forms"
+    category: "CDP"
+    cc: d
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+      - CAN-SPAM
+      - TCPA
+    description: >-
+      HubSpot Forms embed. Form submissions transmit raw PII (name, email, phone, company, custom
+      fields) directly to HubSpot servers, where the data becomes a CRM contact record. HubSpot
+      operates as a processor under its DPA. The privacy concern is twofold: (1) the form itself
+      captures PII before consent in most implementations (the form is the consent action), and (2)
+      HubSpot routinely forwards form submissions to additional integrated tools (Salesforce,
+      marketing automation, ad-platform Conversions APIs) which expand the data sharing footprint.
+      HubSpot Forms also drops the hubspotutk cookie for visitor identification across sessions.
+    action: >-
+      (1) Audit which HubSpot integrations are enabled and confirm DPAs are in place with each
+      downstream recipient; (2) verify form-level consent language meets CCPA notice-at-collection
+      requirements; (3) confirm CAN-SPAM and TCPA opt-in requirements are met for email and SMS
+      marketing fields; (4) disclose HubSpot by name in your privacy policy; (5) audit the hubspotutk
+      cookie scope and persistence.
+
+  - pattern: "hsforms.net"
+    name: "HubSpot Forms (JS)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      HubSpot Forms JavaScript loader endpoint.
+    action: >-
+      See HubSpot Forms findings.
+
+  - pattern: "hs-scripts.com"
+    name: "HubSpot (Tracking)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      HubSpot tracking script endpoint. Provides visitor analytics and contact-identification
+      capabilities tied to HubSpot CRM.
+    action: >-
+      See HubSpot Forms findings.
+
+  - pattern: "hs-analytics.net"
+    name: "HubSpot Analytics"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      HubSpot Analytics endpoint.
+    action: >-
+      See HubSpot Forms findings.
+
+  - pattern: "hsadspixel.net"
+    name: "HubSpot Ads Pixel"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      HubSpot Ads Pixel. Marketing attribution pixel that ties website behavior to HubSpot ad
+      campaigns and forwards to ad platforms (Google, Meta, LinkedIn) via the HubSpot Ads integration.
+      Constitutes "sharing" under CPRA.
+    action: >-
+      Suppress on CCPA opt-out and GPC. Disclose HubSpot Ads Pixel in privacy policy. Confirm DPA
+      terms cover the ad-platform forwarding.
+
+  - pattern: "unpkg.com"
+    name: "unpkg (Public CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      unpkg.com public CDN for npm packages. Open-source CDN operated by Cloudflare. Each request
+      transmits visitor IP and User-Agent. Lower risk than commercial CDNs but still a third-party
+      data egress; identify which packages are being loaded.
+    action: >-
+      Identify the specific packages loaded from unpkg. Consider hosting them yourself to eliminate
+      the third-party dependency.
+
+  - pattern: "b.6sc.co"
+    name: "6sense (Intent Data)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      6sense B2B account engagement and intent data platform. Identifies anonymous website visitors by
+      company using IP-to-company resolution, device fingerprinting, and third-party data co-ops.
+      Builds buyer journey profiles without individual consent. Under CCPA/CPRA this is likely sharing
+      for cross-context behavioral advertising even in a B2B context. The FTC has indicated B2B data
+      does not create a general exemption from consumer privacy rights where individual employee data
+      is captured.
+    action: >-
+      Disclose 6sense in privacy policy and data sharing disclosures. Evaluate whether employee-level
+      behavioral data constitutes personal information under CCPA. Suppress on GPC and CCPA opt-out.
+      Confirm DPA with 6sense covers downstream co-op data sharing.
+
+  - pattern: "ipv6.6sc.co"
+    name: "6sense (Intent Data)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      6sense B2B intent data platform IPv6 endpoint. See b.6sc.co entry.
+    action: >-
+      See b.6sc.co findings.
+
+  - pattern: "j.6sc.co"
+    name: "6sense (Intent Data)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      6sense B2B intent data platform JS delivery endpoint. See b.6sc.co entry.
+    action: >-
+      See b.6sc.co findings.
+
+  - pattern: "qualified.com"
+    name: "Qualified (Pipeline Automation)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      Qualified is a B2B pipeline generation platform that identifies website visitors by company and
+      individual identity via IP resolution, reverse-IP lookup, and CRM data matching, then routes
+      them to live sales reps or AI chat. Real-time visitor identification constitutes interception of
+      browsing activity under ECPA analysis. The platform enriches visitor profiles with third-party
+      data from LinkedIn and ZoomInfo. Under CCPA/CPRA this is sharing for cross-context behavioral
+      advertising. Chat transcripts may trigger wiretapping exposure under CIPA where the platform
+      intercepts communications without adequate consent notice.
+    action: >-
+      Disclose Qualified in privacy policy, including visitor identification and CRM enrichment. Add
+      explicit consent notice before chat initiation in California. Suppress on CCPA opt-out. Confirm
+      whether Qualified operates as a service provider or third party under your DPA terms.
+
+  - pattern: "vector.co"
+    name: "Plain (Customer Messaging)"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Plain (formerly Vector) is a B2B customer support and messaging platform. The vector.co
+      endpoints collect visitor session data and customer interaction events for support workflow
+      routing. Transmits user identifiers and behavioral data to Plain infrastructure.
+    action: >-
+      Disclose Plain in privacy policy. Confirm DPA terms. Evaluate whether support chat transcripts
+      require explicit consent notice under ECPA.
+
+  - pattern: "adnxs.com"
+    name: "Xandr / AppNexus (Programmatic)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Xandr (formerly AppNexus, now owned by Microsoft) is a programmatic advertising exchange. The
+      adnxs.com endpoint fires during ad auction bidding, transmitting visitor identifiers, page
+      context, and behavioral signals to the Xandr DSP and exchange. Xandr operates as a third-party
+      data controller, not a service provider. Visitor data is used for cross-site behavioral
+      targeting across the Xandr network, constituting sharing under CCPA/CPRA. Microsoft ownership
+      creates a data flow that may interact with Microsoft Advertising and LinkedIn Ads audience
+      infrastructure.
+    action: >-
+      Disclose Xandr/AppNexus in privacy policy as an advertising partner. Suppress on CCPA opt-out
+      and GPC. Evaluate whether Xandr presence results from a direct integration or a downstream
+      consequence of another ad platform bidding through the Xandr exchange.
+
+  - pattern: "zi-scripts.com"
+    name: "ZoomInfo (WebSights)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      ZoomInfo WebSights identifies anonymous website visitors by company using IP-to-company
+      resolution and enriches profiles with ZoomInfo B2B contact data. The zi-scripts.com endpoint
+      fires on page load and transmits visitor IP, User-Agent, page URL, and referrer to ZoomInfo,
+      which cross-references the visitor against its database of over 100 million business contacts.
+      This constitutes sharing under CCPA/CPRA. Individual employee identification without consent
+      raises ECPA interception concerns.
+    action: >-
+      Disclose ZoomInfo WebSights in privacy policy. Suppress on CCPA opt-out and GPC. Confirm whether
+      identified visitor data is being passed into a CRM or marketing automation platform.
+
+  - pattern: "ws.zoominfo.com"
+    name: "ZoomInfo (WebSights)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      ZoomInfo WebSights WebSocket endpoint for real-time visitor identification. See zi-scripts.com
+      entry.
+    action: >-
+      See zi-scripts.com findings.
+
+  - pattern: "liadm.com"
+    name: "LiveRamp (Identity Resolution)"
+    category: "Cross-Device"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      LiveRamp Authenticated Traffic Solution and identity resolution platform. The liadm.com endpoint
+      fires to resolve visitor identity against the LiveRamp identity graph, which links authenticated
+      and unauthenticated identifiers across devices. LiveRamp operates as a third-party data
+      controller that builds persistent cross-site identity profiles, constituting sharing under
+      CCPA/CPRA. The LiveRamp data co-op means visitor data is shared with other LiveRamp publisher
+      and advertiser partners beyond the site operator.
+    action: >-
+      Disclose LiveRamp in privacy policy as an identity resolution partner. Suppress on CCPA opt-out
+      and GPC. Evaluate whether authenticated user data (hashed email from login or form submission)
+      is being passed to LiveRamp. Confirm DPA terms address the data co-op sharing model.
+
+  - pattern: "sitedataprocessing.com"
+    name: "LiveRamp (SiteDataProcessing)"
+    category: "Cross-Device"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      LiveRamp SiteDataProcessing endpoint. Handles first-party data onboarding and identity
+      resolution for LiveRamp ATS. See liadm.com entry.
+    action: >-
+      See liadm.com findings.
+
+  - pattern: "jivosite.com"
+    name: "JivoChat (Live Chat)"
+    category: "CDP"
+    cc: d
+    risk: high
+    regs:
+      - ECPA
+      - CIPA
+      - US State Privacy
+    description: >-
+      JivoChat is a live chat and customer messaging platform. The jivosite.com endpoints load the
+      chat widget and establish a persistent WebSocket connection for real-time messaging. Chat
+      platforms are subject to heightened wiretapping analysis under ECPA and CIPA. Courts have
+      applied CIPA Section 631(a) to live chat tools where the vendor accesses message content in
+      transit. See Calhoun v. Google, LLC, 526 F. Supp. 3d 605 (N.D. Cal. 2021) for the real-time
+      interception standard. JivoChat also collects visitor behavioral data for operator dashboards.
+    action: >-
+      Add explicit consent notice before chat initiation in California. Disclose JivoChat in privacy
+      policy as a live chat provider with access to communication content. Evaluate whether JivoChat
+      operates as a service provider or third party. Review JivoChat DPA terms.
+
+  - pattern: "beehiiv-adnetwork"
+    name: "Beehiiv Ad Network"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Beehiiv newsletter advertising network. A Beehiiv ad placement is loading on the page. The
+      Beehiiv ad network uses subscriber and visitor data for newsletter ad targeting across its
+      publisher network, constituting sharing under CCPA/CPRA.
+    action: >-
+      Disclose Beehiiv Ad Network in privacy policy. Confirm whether subscriber or visitor data is
+      shared with Beehiiv for ad targeting across other Beehiiv publications. Suppress on CCPA
+      opt-out.
+
+  - pattern: "linearicons.com"
+    name: "Linear Icons (Font CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Linear Icons CDN serving icon font assets. Each request transmits visitor IP and User-Agent to
+      Linear Icons servers.
+    action: >-
+      Consider self-hosting the Linear Icons font files to eliminate the third-party dependency.
+
+  - pattern: "bootstrapcdn.com"
+    name: "Bootstrap CDN"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Bootstrap CSS framework CDN via MaxCDN/StackPath. Serves Bootstrap CSS and JS assets. Each
+      request transmits visitor IP and User-Agent.
+    action: >-
+      Self-host Bootstrap assets to eliminate the CDN dependency.
+
+  - pattern: "npmcdn.com"
+    name: "npmcdn (JS Package CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      npmcdn.com is a legacy CDN for npm packages now redirected to unpkg.com. Serves JavaScript
+      package assets. Each request transmits visitor IP and User-Agent.
+    action: >-
+      Migrate to unpkg.com or self-host the specific packages being loaded.
+
+  - pattern: "gstatic.com"
+    name: "Google Static CDN"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google Static CDN serving fonts, Maps JavaScript API assets, reCAPTCHA scripts, and other Google
+      service assets. Each request transmits visitor IP and User-Agent to Google infrastructure. Lower
+      privacy risk than advertising or analytics endpoints but still a Google data egress. gstatic.com
+      is used by Google Fonts, Google Maps, and reCAPTCHA, all of which may be subject to GDPR and
+      CCPA disclosure obligations as Google service dependencies.
+    action: >-
+      Identify which specific Google services are loading via gstatic.com. If Google Fonts, consider
+      self-hosting font files. If reCAPTCHA, evaluate alternatives. Disclose Google as a service
+      provider in privacy policy.
+
+  - pattern: "hs-banner.com"
+    name: "HubSpot Cookie Banner"
+    category: "Consent Management"
+    cc: c
+    risk: medium
+    regs:
+      - US State Privacy
+      - ECPA
+    description: >-
+      HubSpot cookie consent banner endpoint. Loads and manages HubSpot cookie consent UI. HubSpot
+      cookie banner does not meet the requirements of a full CMP under CCPA/CPRA or GDPR because it
+      does not support GPC signal detection or granular consent category management.
+    action: >-
+      If relying on HubSpot cookie banner for CCPA or GDPR compliance, evaluate whether it meets
+      applicable requirements. For GPC compliance, a dedicated CMP (Osano, OneTrust, Cookiebot) is
+      required. Disclose HubSpot in privacy policy.
+
+  - pattern: "ads-twitter.com"
+    name: "X (Twitter) Ads (Static CDN)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      X (formerly Twitter) Ads static asset CDN. Serves advertising pixel scripts and tracking assets
+      for X Ads. The static.ads-twitter.com endpoint delivers the X Pixel JavaScript that fires
+      conversion and behavioral events to X Ads infrastructure, constituting sharing under CCPA/CPRA.
+    action: >-
+      Suppress X Pixel on CCPA opt-out and GPC. Disclose X Ads in privacy policy. Confirm X Ads DPA
+      terms if operating under GDPR.
+
+  - pattern: "onfire.ai"
+    name: "Onfire (Revenue Intelligence)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Onfire is a B2B revenue intelligence platform that identifies anonymous website visitors by
+      tracking developer activity, open-source contributions, community interactions, and technology
+      stack signals across the open web. The v.onfire.ai endpoint fires to capture visitor context and
+      match it against Onfire account intelligence graph covering over 50 million engineers and
+      technical decision-makers. Like 6sense and ZoomInfo WebSights, Onfire constitutes sharing under
+      CCPA/CPRA through cross-context behavioral profiling. Individual-level identification of
+      employees without consent raises ECPA interception concerns.
+    action: >-
+      Disclose Onfire in privacy policy as a visitor intelligence provider. Suppress on CCPA opt-out
+      and GPC. Evaluate whether employee-level behavioral identification constitutes personal
+      information under CCPA. Confirm DPA terms.
+
+  - pattern: "api.github.com"
+    name: "GitHub API"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      GitHub API endpoint. Typically indicates the site operator is making calls to GitHub API to
+      display repository data, contribution counts, or integration status. GitHub (Microsoft) receives
+      the request IP and User-Agent. Low privacy risk in most configurations unless authenticated user
+      tokens are present in request headers.
+    action: >-
+      Verify that no authenticated user tokens are being exposed in GitHub API calls from the browser.
+      If the site is displaying public repository data, this is low risk. If calls include
+      authentication, ensure tokens are scoped to minimum required permissions.
+
+  - pattern: "translate.google.com"
+    name: "Google Translate Widget"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google Translate widget endpoint. Fires when a site embeds the Google Translate widget for
+      in-page translation. Google receives visitor IP, User-Agent, and the page URL. Low privacy risk
+      as a utility service but Google retains usage data per its standard terms.
+    action: >-
+      Disclose Google Translate as a third-party service if using the embedded widget. Consider
+      whether the translation utility justifies the Google data dependency.
+
+  - pattern: "translate.googleapis.com"
+    name: "Google Translate API"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google Translate API endpoint. Serves translation assets and handles API requests for Google
+      Translate widget functionality. See translate.google.com entry.
+    action: >-
+      See translate.google.com findings.
+
+  - pattern: "ssl.google-analytics.com"
+    name: "Google Analytics (Legacy SSL)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Legacy Google Analytics SSL endpoint used by older Universal Analytics or GA.js implementations.
+      This endpoint indicates outdated analytics code that predates GA4. Legacy GA collects full IP
+      addresses, cookie-based cross-site tracking, and session data without the data controls
+      available in GA4. Sites still firing this endpoint should migrate to GA4 with IP anonymization
+      enabled.
+    action: >-
+      Migrate to GA4 immediately. Legacy Universal Analytics data collection ended July 2024. This
+      endpoint should not be firing on any current implementation. Audit GTM for stale legacy GA tags.
+
+  - pattern: "hscollectedforms.net"
+    name: "HubSpot Collected Forms"
+    category: "CDP"
+    cc: d
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+      - CAN-SPAM
+    description: >-
+      HubSpot Collected Forms captures non-HubSpot form submissions on the page by injecting a
+      listener that intercepts form field values when a visitor submits any form, regardless of
+      whether it is a HubSpot form. This constitutes real-time interception of form data submitted to
+      the site operator and is one of the most aggressively litigated session replay adjacent
+      behaviors under ECPA and CIPA. Collected form data (names, emails, phone numbers) is transmitted
+      to HubSpot CRM. The interception occurs before the site operator receives the data, which is the
+      CIPA Section 631(a) exposure pattern.
+    action: >-
+      Disable HubSpot Collected Forms unless you have explicit consent for the interception and CRM
+      import of form data. Disclose in privacy policy that form data is captured by HubSpot. This
+      feature requires the same consent disclosure as session replay. Escalate to legal for ECPA and
+      CIPA review.
+
+  - pattern: "hsappstatic.net"
+    name: "HubSpot App Static CDN"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      HubSpot application static asset CDN. Serves HubSpot chat widget, forms, and other embedded
+      application assets. Presence indicates active HubSpot product deployment beyond basic tracking.
+    action: >-
+      Document which HubSpot products are loading via hsappstatic.net. Ensure all HubSpot-loaded
+      products are disclosed in privacy policy.
+
+  - pattern: "hubapi.com"
+    name: "HubSpot API"
+    category: "CDP"
+    cc: d
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      HubSpot API endpoint. Browser-side calls to api.hubapi.com indicate client-side HubSpot API
+      integration, typically for dynamic form population, contact lookups, or real-time CRM
+      interaction from the frontend. Browser-to-HubSpot API calls may expose API keys in client-side
+      code.
+    action: >-
+      Audit client-side HubSpot API calls. API keys visible in browser requests should be rotated and
+      moved to server-side calls. Disclose HubSpot CRM integration in privacy policy.
+
+  - pattern: "cr-proxy.com"
+    name: "cr-proxy.com (Unverified)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      cr-proxy.com is an unverified third-party domain. The domain pattern suggests a tracking or
+      analytics proxy endpoint, but vendor identity could not be confirmed from publicly available
+      sources. Presence of cdn.cr-proxy.com and api.cr-proxy.com subdomains suggests a CDN plus API
+      backend pattern typical of tracking or attribution vendors.
+    action: >-
+      Identify this vendor through your marketing or development team. Check your tag management
+      container and vendor contracts for any tool using cr-proxy.com as a data endpoint. Do not
+      include in privacy policy disclosures until vendor identity is confirmed.
+
+  - pattern: "cloudflareinsights.com"
+    name: "Cloudflare Web Analytics"
+    category: "Analytics"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Cloudflare Web Analytics and Real User Monitoring. The beacon.min.js script from
+      static.cloudflareinsights.com collects page load performance metrics, Core Web Vitals, and
+      visitor counts. The cdn-cgi/rum endpoint receives Real User Monitoring data. Cloudflare Web
+      Analytics is designed to be privacy-preserving -- it does not use cookies or build individual
+      user profiles -- but it does transmit visitor IP address and User-Agent to Cloudflare
+      infrastructure with each beacon. As a Cloudflare product, data is subject to Cloudflare privacy
+      policy.
+    action: >-
+      Disclose Cloudflare Web Analytics in privacy policy as an analytics provider. Lower risk than
+      most analytics platforms due to cookieless design. Confirm your Cloudflare account DPA if
+      operating under GDPR.
+
+  - pattern: "ctfassets.net"
+    name: "Contentful (CMS Asset CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Contentful headless CMS image and asset CDN. ctfassets.net serves media files (images, videos,
+      documents) stored in Contentful. Each asset request transmits visitor IP and User-Agent to
+      Contentful/Fastly CDN infrastructure. Low privacy risk as a content delivery service with no
+      behavioral tracking.
+    action: >-
+      Low risk. Disclose Contentful as a content delivery service in privacy policy if operating under
+      GDPR. No suppression required for CCPA opt-out.
+
+  - pattern: "/ces/v1"
+    name: "Segment (CNAME Deployed)"
+    category: "CDP"
+    cc: d
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Segment Customer Data Platform deployed via CNAME on a first-party domain. The /ces/v1 path is a
+      Segment Customer Experience Server endpoint, used when Segment is proxied through the site
+      operator own domain to bypass third-party cookie restrictions and ad blockers. CNAME deployment
+      means the browser treats Segment as first-party, sharing first-party cookies with the parent
+      domain and bypassing third-party tracking protections. This is one of the most
+      privacy-significant configurations in modern martech: data that appears to go to the first party
+      is being forwarded to Segment and its configured destinations. The /ces/v1/projects endpoint
+      returns the full Segment workspace configuration including all enabled integrations.
+    action: >-
+      Document all Segment destinations receiving data via this CNAME deployment. Each destination
+      requires disclosure in privacy policy. Suppress all Segment destinations on CCPA opt-out and GPC
+      -- CNAME deployment does not reduce the disclosure obligation. Confirm Segment DPA covers all
+      downstream destinations.
+
+  - pattern: "/v1/rgstr"
+    name: "Statsig / Feature Flags (A/B Testing)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Statsig feature flagging and A/B testing platform endpoint. The /v1/rgstr and /v1/initialize
+      paths are characteristic of Statsig SDK initialization and event registration. Statsig collects
+      user identifiers, feature flag assignments, and behavioral events to power experimentation. When
+      deployed via CNAME on a first-party domain, Statsig receives first-party cookies alongside
+      experiment data.
+    action: >-
+      Disclose Statsig or equivalent A/B testing platform in privacy policy. Confirm whether
+      experiment assignment data is linked to persistent user identifiers. Suppress on CCPA opt-out if
+      experiment data is used for personalization or targeting.
+
+  - pattern: "developer.apple.com/assets/elements/badges"
+    name: "Apple App Store Badge (CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Apple Developer CDN serving App Store badge SVG and image assets. Sites display these badges as
+      download links to their iOS or macOS apps. Each request transmits visitor IP and User-Agent to
+      Apple CDN infrastructure. Low privacy risk as a static asset delivery endpoint with no
+      behavioral tracking.
+    action: >-
+      Low risk. Consider self-hosting the badge SVG to eliminate the Apple CDN dependency and reduce
+      third-party requests. Badge files are available for download from
+      developer.apple.com/app-store/marketing/guidelines/.
+
+  - pattern: "play.google.com/intl"
+    name: "Google Play Badge (CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google Play CDN serving Get it on Google Play badge image assets. Sites display these badges as
+      download links to their Android apps. Each request transmits visitor IP and User-Agent to Google
+      infrastructure. Low privacy risk as a static asset delivery endpoint, though the request does
+      reach Google servers.
+    action: >-
+      Low risk. Consider self-hosting the badge PNG to eliminate the Google CDN dependency. Badge
+      files are available for download from play.google.com/intl/en_us/badges/.
+
+  - pattern: "extole"
+    name: "Extole (Referral Marketing)"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Extole is a referral and loyalty marketing platform deployed via CNAME on a branded customer
+      subdomain (typically share.domain.com, refer.domain.com, or similar). The extole_token and
+      xtl_bid cookies track referral attribution -- which user referred which new customer. Extole
+      collects referrer identity, referred user identity, and conversion events. Under CCPA/CPRA this
+      is sharing for cross-context behavioral advertising. CNAME deployment means cookies are scoped
+      to a first-party-adjacent domain, giving them longer persistence than third-party cookies.
+    action: >-
+      Disclose Extole in privacy policy as a referral marketing provider. Confirm DPA terms. Verify
+      referral attribution cookies are suppressed on CCPA opt-out. Audit cookie max-age values --
+      referral cookies persisting over 12 months require disclosure under some state laws.
+
+  - pattern: "debugbear"
+    name: "DebugBear (Performance Monitoring)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      DebugBear is a web performance monitoring platform. The debugbear/data endpoint receives Real
+      User Monitoring (RUM) data including Core Web Vitals, navigation timing, page load events, and
+      viewport dimensions. No behavioral tracking or PII collection in normal configuration.
+    action: >-
+      Low risk. Confirm DebugBear DPA if operating under GDPR. No suppression required for CCPA
+      opt-out in standard RUM configuration.
+
+  - pattern: "builder.io/api/v1/pixel"
+    name: "Builder.io (Tracking Pixel)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Builder.io tracking pixel endpoint. The /api/v1/pixel path fires a behavioral tracking beacon
+      distinct from Builder.io content delivery. It transmits visitor session data and page
+      interaction signals to Builder.io infrastructure for analytics and personalization. Builder.io
+      may use this data to build visitor profiles across its publisher network.
+    action: >-
+      Disclose Builder.io as an analytics provider in your privacy policy if using the tracking pixel.
+      Evaluate whether Builder.io visitor data is shared across its network. Suppress on CCPA opt-out.
+      Review Builder.io DPA to confirm it operates as a service provider.
+
+  - pattern: "uconnect.tealiumiq.com"
+    name: "Tealium iQ (uConnect)"
+    category: "CDP"
+    cc: d
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Tealium iQ uConnect endpoint used for tag error logging and diagnostics. The /ulog/_error path
+      receives error telemetry from the Tealium universal tag loader. Low privacy risk as a diagnostic
+      endpoint, but confirms Tealium iQ is the active tag management system. Tealium containers
+      frequently bundle and fire third-party vendor tags including advertising pixels, session replay
+      tools, and CDPs.
+    action: >-
+      Low risk for the uConnect endpoint itself. Document Tealium iQ as your tag management system in
+      privacy policy. Audit the Tealium container contents to inventory all tags being fired through
+      it.
+
+  - pattern: "ct.pinterest.com"
+    name: "Pinterest Tag"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Pinterest conversion tag event collection endpoint. Fires on page visit and conversion events
+      to attribute traffic and conversions to Pinterest ad campaigns. Transmits URL, referrer, and
+      hashed email when Enhanced Match is enabled. Subject to CCPA sale/sharing restrictions.
+    action: >-
+      Disclose Pinterest as an advertising vendor in your privacy policy. Verify CMP suppression on
+      opt-out. Review Pinterest Enhanced Match configuration if email hashing is active.
+
+  - pattern: "s.pinimg.com"
+    name: "Pinterest (CDN)"
+    category: "Advertising"
+    cc: a
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Pinterest static asset CDN, also used as the image beacon endpoint for the Pinterest Tag.
+      Requests from this domain confirm the Pinterest Tag is loaded and active.
+    action: >-
+      Treat as confirmation of Pinterest Tag presence. Low risk for CDN assets alone.
+
+  - pattern: "amazon-adsystem.com"
+    name: "Amazon Advertising"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Amazon DSP advertising pixel. Subdomains handle conversion attribution (c.), SDK delivery
+      (s.), and event tracking (tk.). Amazon Advertising leverages cross-device purchase-intent
+      signals from Amazon's retail network, making it a high-value profiling system under US State
+      Privacy laws.
+    action: >-
+      Disclose Amazon Advertising in your privacy policy. Verify CMP suppression on opt-out. Review
+      Amazon publisher agreements for data sharing obligations.
+
+  - pattern: "pixels.spotify.com"
+    name: "Spotify Ads"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Spotify advertising conversion pixel. Tracks visitors who engaged with Spotify ads and
+      reached the site. Transmits page URL and event data to Spotify's ad attribution platform.
+    action: >-
+      Disclose Spotify Ads in your privacy policy. Suppress on CCPA opt-out.
+
+  - pattern: "pixel.byspotify.com"
+    name: "Spotify Ads (Beacon)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Spotify advertising pixel beacon via byspotify.com, Spotify's first-party ad tech domain.
+      Functions identically to pixels.spotify.com for conversion and retargeting attribution.
+    action: >-
+      Treat identically to Spotify Ads. Disclose in privacy policy and suppress on CCPA opt-out.
+
+  - pattern: "quora.com"
+    name: "Quora Pixel"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Quora conversion pixel and event tracking. The q.quora.com endpoint collects page visit and
+      conversion events to attribute traffic from Quora's advertising network.
+    action: >-
+      Disclose Quora Ads in your privacy policy. Verify CMP suppression on opt-out.
+
+  - pattern: "ensighten.com"
+    name: "Ensighten"
+    category: "Tag Management"
+    cc: t
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Ensighten Manage tag management system. The nexus.ensighten.com endpoint coordinates tag
+      firing and data layer synchronization. As a TMS, Ensighten loads and orchestrates advertising,
+      analytics, and other third-party tags. Full vendor inventory requires auditing the container.
+    action: >-
+      Audit the Ensighten container to inventory all tags it fires. Ensure CMP integration
+      suppresses Ensighten-managed tags on opt-out.
+
+  - pattern: "casalemedia.com"
+    name: "Index Exchange"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Index Exchange (formerly Casale Media) programmatic ad exchange. The dsum-sec subdomain
+      handles cookie syncing and user segment matching across the Index Exchange DSP network,
+      enabling cross-site user tracking via bid-stream data.
+    action: >-
+      Disclose Index Exchange as an advertising partner. Verify CMP consent gate covers cookie-sync
+      requests. Review data sharing agreements with Index Exchange.
+
+  - pattern: "tiktokw.us"
+    name: "TikTok Analytics (US)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - US State Privacy
+    description: >-
+      TikTok analytics collection endpoint for US data residency. The analytics-ipv6.tiktokw.us
+      domain routes IPv6 event collection through TikTok's US-region infrastructure. Functionally
+      equivalent to analytics.tiktok.com.
+    action: >-
+      Treat identically to TikTok Analytics. Verify CMP suppression on opt-out.
+
+  - pattern: "cdnjs.cloudflare.com"
+    name: "cdnjs (Cloudflare CDN)"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      cdnjs.cloudflare.com public CDN operated by Cloudflare serving open-source JavaScript
+      libraries. Each request transmits visitor IP and User-Agent to Cloudflare infrastructure.
+      Lower risk than commercial trackers but still a third-party data egress.
+    action: >-
+      Identify the specific libraries loaded from cdnjs. Consider self-hosting to eliminate
+      the third-party dependency.
+
+  - pattern: "code.jquery.com"
+    name: "jQuery CDN"
+    category: "Hosting"
+    cc: an
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      jQuery Foundation CDN (code.jquery.com) serving the jQuery JavaScript library. Each
+      request transmits visitor IP and User-Agent to OpenJS Foundation infrastructure.
+      Lower risk than commercial trackers but still a third-party data egress.
+    action: >-
+      Consider self-hosting the jQuery library or migrating to a first-party CDN to
+      eliminate the third-party dependency.
+
+  - pattern: "ipapi.co"
+    name: "ipapi (IP Geolocation)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      ipapi.co IP geolocation lookup service. Resolves visitor IP address to country, region,
+      city, and timezone. Commonly used for consent regionalization (determining whether GDPR
+      or CPRA applies) and for geo-targeted content. The raw visitor IP is transmitted to a
+      third-party data processor on every page load that triggers the lookup.
+    action: >-
+      Confirm what data is returned and how it is used. If used solely for consent
+      regionalization, verify no additional data is retained by ipapi.co. Consider a
+      first-party server-side geolocation lookup to avoid the third-party egress.
+
+  - pattern: "getrockerbox.com"
+    name: "Rockerbox (Attribution)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Rockerbox marketing attribution pixel (getrockerbox.com). Rockerbox is a multi-touch
+      attribution and audience platform that tracks user journeys across paid, organic, and
+      email channels. Collects behavioral and conversion data to build cross-channel audience
+      segments and facilitate ad retargeting. Constitutes sale or sharing of personal
+      information under CPRA and equivalent state statutes.
+    action: >-
+      <<SR_ACTION>>
+
+  - pattern: "getclicky.com"
+    name: "Clicky Analytics"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Clicky (getclicky.com) web analytics platform. Provides real-time visitor tracking,
+      heatmaps, and optional on-site session recording. The session recording feature
+      captures individual keystrokes, clicks, and scroll behavior. If session recording is
+      active, evaluate under the wiretapping standard.
+    action: >-
+      Confirm whether Clicky session recording (on-site analytics) is enabled. If active,
+      <<SR_ACTION>>
+
+  # ── Added from Forbes HAR QA (2026-05) ─────────────────────────────
+  # Ketch CMP first: its absence produced a false "No CMP detected" high
+  # finding. cc:c flips cmpStatus and clears that finding.
+
+  - pattern: "ketchcdn.com"
+    name: "Ketch (Consent Management)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Ketch consent and data-permissioning platform (global.ketchcdn.com serves the Ketch tag and
+      configuration). Load order is critical: if Ketch loads after tracking scripts, consent cannot
+      be gated and visitors are tracked before any consent decision is possible. Ketch also exposes a
+      programmatic consent API and GPC handling that must be wired to each ad platform's opt-out path.
+    action: >-
+      Verify Ketch loads before any tracking tag, that consent types require affirmative action rather
+      than auto-grant, that GPC detection is enabled, and that opt-out and GPC propagate to Meta (LDU),
+      Google (RDP), and other ad destinations at the event level.
+
+  - pattern: "ketchjs.com"
+    name: "Ketch (CDN)"
+    category: "Consent Management"
+    cc: c
+    risk: ok
+    regs:
+      - US State Privacy
+      - GDPR
+    description: >-
+      Ketch consent platform CDN (cdn.ketchjs.com).
+    action: >-
+      See Ketch findings.
+
+  - pattern: "adsafeprotected.com"
+    name: "Integral Ad Science (IAS)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Integral Ad Science verification and measurement (adsafeprotected.com), covering viewability,
+      brand safety, and ad fraud detection. IAS receives page URL, ad placement context, and visitor
+      signals, and operates as an independent measurement controller rather than a service provider in
+      typical deployments. The data flow falls within CPRA's "sharing" definition for cross-context
+      behavioral advertising where it informs targeting or audience measurement.
+    action: >-
+      Disclose IAS by name in your privacy policy. Confirm whether IAS operates under a service-provider
+      DPA or as an independent controller, and describe the relationship accurately. Verify CMP
+      suppression on GPC and CCPA opt-out.
+
+  - pattern: "doubleverify.com"
+    name: "DoubleVerify"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      DoubleVerify ad verification and measurement (doubleverify.com), covering viewability, fraud,
+      and brand-safety measurement. Receives page URL, placement context, and visitor signals as an
+      independent measurement party. Constitutes "sharing" under CPRA where it supports audience
+      measurement or targeting.
+    action: >-
+      Disclose DoubleVerify by name in your privacy policy. Confirm the contractual relationship
+      (service provider with DPA vs. independent controller). Verify CMP suppression on GPC and CCPA
+      opt-out.
+
+  - pattern: "dv.tech"
+    name: "DoubleVerify (Telemetry)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      DoubleVerify telemetry endpoint (dv.tech).
+    action: >-
+      See DoubleVerify findings.
+
+  - pattern: "media.net"
+    name: "Media.net"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Media.net advertising network and header-bidding partner (media.net), including contextual
+      targeting and server-to-server prebid (prebid-s2s.media.net). Operates as an independent
+      advertising controller. Transmits page context and visitor identifiers for cross-site behavioral
+      advertising, which constitutes "sharing" under CPRA. Server-side prebid endpoints forward to
+      downstream demand partners that are not visible in a client-side HAR.
+    action: >-
+      Disclose Media.net by name in your privacy policy as an advertising partner. Audit the
+      header-bidding partner list, including server-to-server demand. Verify CMP suppression on GPC and
+      CCPA opt-out, and confirm prebid does not fire for opted-out users.
+
+  - pattern: "criteo.com"
+    name: "Criteo"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Criteo retargeting and dynamic-advertising platform (criteo.com), including identity sync
+      endpoints (gum.criteo.com). Independent advertising controller that builds cross-site profiles
+      for retargeting. A textbook "sharing" relationship under CPRA and a frequently litigated data
+      flow.
+    action: >-
+      Disclose Criteo by name in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out,
+      including the identity-sync calls. Confirm Criteo is not building retargeting audiences for
+      opted-out users.
+
+  - pattern: "criteo.net"
+    name: "Criteo (CDN)"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Criteo CDN and tag host (criteo.net).
+    action: >-
+      See Criteo findings.
+
+  - pattern: "adtrafficquality.google"
+    name: "Google Ad Traffic Quality"
+    category: "Advertising"
+    cc: a
+    risk: medium
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Google ad traffic quality and invalid-traffic detection endpoints (ep1/ep2.adtrafficquality.google),
+      associated with AdSense and Ad Manager. Collects signals to score traffic quality and detect
+      invalid traffic.
+    action: >-
+      Disclose as part of your Google advertising stack. Verify CMP gating alongside the AdSense / Ad
+      Manager tags that trigger it.
+
+  - pattern: "kargo.com"
+    name: "Kargo"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      Kargo mobile and programmatic advertising platform (kargo.com). Independent advertising
+      controller transmitting placement context and visitor signals for cross-site advertising.
+      Constitutes "sharing" under CPRA.
+    action: >-
+      Disclose Kargo by name in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out.
+
+  - pattern: "inmobi.com"
+    name: "InMobi"
+    category: "Advertising"
+    cc: a
+    risk: high
+    regs:
+      - ECPA
+      - US State Privacy
+    description: >-
+      InMobi advertising and identity-sync platform (sync.inmobi.com). Independent advertising
+      controller performing cross-site cookie/identity syncing for behavioral advertising. Constitutes
+      "sharing" under CPRA.
+    action: >-
+      Disclose InMobi by name in your privacy policy. Verify CMP suppression on GPC and CCPA opt-out,
+      including identity-sync calls.
+
+  - pattern: "munchkin.marketo.net"
+    name: "Marketo (Munchkin)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Marketo Munchkin tracking (munchkin.marketo.net), an Adobe marketing-automation behavioral
+      tracker that records page views and visitor activity tied to a Marketo lead profile. Whether it
+      constitutes "sharing" depends on configuration and the DPA with Adobe.
+    action: >-
+      Confirm the Adobe/Marketo DPA and whether Munchkin operates as a service provider. Verify CMP
+      gating for analytics consent. Disclose in your privacy policy.
+
+  - pattern: "qualtrics.com"
+    name: "Qualtrics (Site Intercept)"
+    category: "Analytics"
+    cc: an
+    risk: medium
+    regs:
+      - US State Privacy
+    description: >-
+      Qualtrics Site Intercept / website feedback (siteintercept.qualtrics.com), which targets and
+      displays surveys based on visitor behavior and can set targeting cookies. Typically a
+      service-provider relationship under DPA, but behavioral targeting and cookie use warrant review.
+    action: >-
+      Confirm the Qualtrics DPA and service-provider terms. Verify CMP gating for any targeting cookies.
+      Disclose in your privacy policy.
+
+  # ── Privacy-first analytics and backend infrastructure ──────────────────
+  # Added June 2026 after external review: these were showing up as
+  # unidentified third parties (Plausible, Supabase) or false-positive sGTM
+  # candidates (self-hosted Plausible /api/event). All risk-ok: cookieless
+  # measurement or the site's own backend, not tracking.
+
+  - pattern: "plausible.io"
+    name: "Plausible Analytics"
+    category: "Analytics"
+    cc: an
+    risk: ok
+    regs: []
+    description: >-
+      Privacy-first web analytics (plausible.io). Cookieless by design: no persistent identifiers,
+      no cross-site tracking, aggregated measurement only, EU-hosted. In its standard configuration
+      it does not meet the sale or sharing definitions under CPRA. Self-hosted and proxied
+      deployments post the same payload shape ({n, u, d}) to /api/event on a first-party domain and
+      are recognized separately by payload shape.
+    action: >-
+      No suppression action expected in the standard configuration. Confirm the deployment is
+      standard Plausible (script from plausible.io or a documented self-host) and disclose analytics
+      use in your privacy policy.
+
+  - pattern: "usefathom.com"
+    name: "Fathom Analytics"
+    category: "Analytics"
+    cc: an
+    risk: ok
+    regs: []
+    description: >-
+      Privacy-first web analytics (cdn.usefathom.com). Cookieless: no persistent identifiers and no
+      cross-site tracking; measurement is aggregated. In its standard configuration it does not meet
+      the sale or sharing definitions under CPRA.
+    action: >-
+      No suppression action expected in the standard configuration. Disclose analytics use in your
+      privacy policy.
+
+  - pattern: "simpleanalyticscdn.com"
+    name: "Simple Analytics"
+    category: "Analytics"
+    cc: an
+    risk: ok
+    regs: []
+    description: >-
+      Privacy-first web analytics (scripts.simpleanalyticscdn.com / queue.simpleanalyticscdn.com).
+      Cookieless, no persistent identifiers, EU-based, aggregated measurement only. In its standard
+      configuration it does not meet the sale or sharing definitions under CPRA.
+    action: >-
+      No suppression action expected in the standard configuration. Disclose analytics use in your
+      privacy policy.
+
+  - pattern: "supabase.co"
+    name: "Supabase (Backend Infrastructure)"
+    category: "Backend Infrastructure"
+    cc: t
+    risk: ok
+    regs: []
+    description: >-
+      Supabase backend-as-a-service (project subdomains on supabase.co): Postgres REST API,
+      authentication, storage, and realtime infrastructure. This is application infrastructure, not
+      a tracker: it is the site's own datastore and login layer served from a vendor domain.
+      Requests carry the project's anon API key in an Authorization header by design. Calls to
+      /auth/v1/ endpoints (login, token refresh) usually mean the capture came from an authenticated
+      session rather than a clean first visit.
+    action: >-
+      Confirm Supabase operates as the site's own backend (processor under DPA) and that the privacy
+      policy's hosting and subprocessor disclosure covers it. No CMP gating expected for
+      infrastructure calls.

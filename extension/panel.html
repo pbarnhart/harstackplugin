@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HARstack</title>
+<link rel="stylesheet" href="report.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- App chrome: excluded from print by report.css -->
+  <header class="chrome" id="chrome">
+    <div class="brand">
+      <span class="brand-mark">Pixel <span class="amp">&amp;</span> Policy</span>
+      <span class="brand-sub">HARSTACK</span>
+      <span class="pill" id="permPill" title="This extension requests no permissions at all and runs no background capture.">LOCAL ONLY &middot; ZERO PERMISSIONS</span>
+    </div>
+    <div class="controls">
+      <span id="captureState" class="capture-state idle">&#9679; Idle</span>
+      <button id="btnReload" class="btn" title="Reload the page and capture from the first request">Reload &amp; Capture</button>
+      <button id="btnAnalyze" class="btn btn-primary">Analyze</button>
+      <span class="sep"></span>
+      <button id="btnHar" class="btn btn-ghost" disabled title="Download the captured HAR">HAR</button>
+      <button id="btnJson" class="btn btn-ghost" disabled title="Download the sanitized analysis JSON">JSON</button>
+      <button id="btnCsv" class="btn btn-ghost" disabled title="Download findings as CSV">CSV</button>
+      <button id="btnPrompt" class="btn btn-ghost" disabled title="Copy the disclosure-gap AI prompt: paste the site's privacy policy into it and run it in the AI of your choice">AI Prompt</button>
+      <button id="btnPrint" class="btn btn-ghost" disabled title="Print the full report. Active filters do not apply to print.">Print / PDF</button>
+      <span class="sep"></span>
+      <span class="menu-wrap">
+        <button id="btnMenu" class="btn btn-ghost" title="Feedback and diagnostics">Report &#9662;</button>
+        <span class="menu" id="reportMenu" hidden>
+          <a class="menu-item" id="lnkBug" href="#" target="_blank" rel="noreferrer">Report a bug</a>
+          <a class="menu-item" id="lnkTracker" href="#" target="_blank" rel="noreferrer">Request a tracker</a>
+          <button class="menu-item" id="btnDiag" title="Copies version, browser, and result counts. No URLs, domains, or page data.">Copy diagnostics</button>
+        </span>
+      </span>
+    </div>
+  </header>
+
+  <!-- Filter toolbar: appears after analysis, excluded from print -->
+  <div class="toolbar" id="toolbar" hidden>
+    <input id="q" type="search" placeholder="Filter findings, trackers, domains&hellip;  ( / )" autocomplete="off">
+    <span class="chips" id="sevChips">
+      <button class="chip" data-sev="high">High</button>
+      <button class="chip" data-sev="medium">Medium</button>
+      <button class="chip" data-sev="low">Low</button>
+      <button class="chip" data-sev="info">Info / OK</button>
+    </span>
+    <span class="filter-count" id="filterCount"></span>
+  </div>
+
+  <main id="report" class="report">
+    <div class="empty" id="empty">
+      <h1>Audit your stack</h1>
+      <p>Browse the page you want to audit with this panel open, then press <strong>Analyze</strong>.
+         For a complete capture from the first request, press <strong>Reload &amp; Capture</strong>.</p>
+      <p>For a first-visit audit, use a private or incognito window and stay logged out.
+         An authenticated session mixes your own account traffic into the capture.</p>
+      <p class="fineprint">Requests are read through the DevTools network API. Nothing leaves this browser.
+         No permissions, no background listeners, no remote calls.</p>
+    </div>
+  </main>
+
+</div>
+
+<!-- Engine first, then panel logic that calls it -->
+<script src="engine.js"></script>
+<script src="panel.js"></script>
+</body>
+</html>

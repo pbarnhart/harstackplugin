@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capture types · HARstack</title>
+<meta name="description" content="What kind of HAR capture should you run? A homepage capture shows the visit-time tracking surface. A form-submit capture shows the conversion-time exposure. They are different audits.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;1,500;1,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a2030;
+  --paper: #ffffff;
+  --paper-dark: #f0f4f8;
+  --paper-mid: #f7f9fb;
+  --rule: #d6dee6;
+  --rule-light: #e8edf2;
+  --accent: #b83228;
+  --accent-dark: #8c1f17;
+  --accent-light: #fdf0ee;
+  --header: #3a7fbf;
+  --header-dark: #2d6496;
+  --header-light: #e8f2fb;
+  --warn: #c47a1a;
+  --warn-light: #fef6e8;
+  --ok: #2a7a4f;
+  --ok-light: #edf7f2;
+  --info: #1a5f8a;
+  --body: 'Source Sans 3', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Playfair Display', serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper-mid);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ MASTHEAD (matches wizard) ============ */
+.masthead {
+  background: var(--header);
+  color: white;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid var(--header-dark);
+}
+.masthead-brand {
+  font-family: var(--display);
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 500;
+}
+.masthead-sep { opacity: 0.5; }
+.masthead-tool {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 2px;
+  color: rgba(255,255,255,0.95);
+}
+.masthead-home {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.95);
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid rgba(255,255,255,0.45);
+  border-radius: 2px;
+  background: rgba(255,255,255,0.12);
+  transition: all 0.15s;
+}
+.masthead-home:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.7); }
+.masthead-local {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: rgba(42,122,79,0.55);
+  border: 1px solid rgba(108,220,170,0.65);
+  padding: 4px 10px 4px 8px;
+  border-radius: 2px;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.masthead-local-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #6dc;
+  box-shadow: 0 0 6px rgba(108,220,170,0.7);
+  display: inline-block;
+}
+.masthead-spacer { flex: 1; }
+.masthead-wizard {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: white;
+  text-decoration: none;
+  padding: 6px 14px;
+  background: var(--accent);
+  border: 1px solid var(--accent-dark);
+  border-radius: 2px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.masthead-wizard:hover { background: var(--accent-dark); }
+
+/* ============ HERO ============ */
+.hero {
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-mid) 100%);
+  padding: 56px 24px 36px;
+  border-bottom: 1px solid var(--rule);
+}
+.hero-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+}
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--header-dark);
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: 40px;
+  line-height: 1.12;
+  font-style: italic;
+  color: var(--ink);
+  margin: 0 0 16px;
+  font-weight: 700;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+.hero-sub {
+  font-size: 17px;
+  line-height: 1.6;
+  color: #4a5868;
+  margin: 0 auto 24px;
+  max-width: 640px;
+}
+.hero-back {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--header-dark);
+  text-decoration: none;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid var(--header);
+  border-radius: 2px;
+  font-weight: 600;
+  display: inline-block;
+  transition: all 0.15s;
+}
+.hero-back:hover { background: var(--header); color: white; }
+
+/* ============ MAIN SHELL ============ */
+main {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+/* ============ INTRO LEDE ============ */
+.lede {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #2a3744;
+  margin-bottom: 28px;
+}
+.lede strong { color: var(--ink); }
+
+.lede-cmd {
+  background: var(--header-light);
+  border-left: 3px solid var(--header);
+  padding: 18px 22px;
+  border-radius: 0 3px 3px 0;
+  margin: 28px 0 36px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #2d4a66;
+}
+.lede-cmd strong { color: var(--header-dark); }
+
+/* ============ TABLE OF CONTENTS ============ */
+.toc {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 22px 26px;
+  margin-bottom: 48px;
+  box-shadow: 0 1px 3px rgba(26,32,48,0.04);
+}
+.toc-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6a7888;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.toc ol {
+  margin: 0;
+  padding-left: 24px;
+  counter-reset: toc-counter;
+  list-style: none;
+}
+.toc li {
+  counter-increment: toc-counter;
+  padding: 5px 0;
+  position: relative;
+  padding-left: 8px;
+}
+.toc li::before {
+  content: counter(toc-counter);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  position: absolute;
+  left: -20px;
+  top: 7px;
+}
+.toc a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dotted #bcc5d0;
+  font-weight: 500;
+}
+.toc a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.toc-note {
+  font-size: 13px;
+  color: #6a7888;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule-light);
+  font-style: italic;
+}
+
+/* ============ CAPTURE SECTIONS ============ */
+.capture {
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(26,32,48,0.04);
+  overflow: hidden;
+}
+.capture-header {
+  background: var(--header-dark);
+  color: white;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 2px solid #1f5278;
+}
+.capture-num {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  border: 1.5px solid rgba(255,255,255,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  flex-shrink: 0;
+  color: white;
+}
+.capture-title-wrap { flex: 1; min-width: 0; }
+.capture-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,220,180,0.95);
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+.capture-title {
+  font-family: var(--display);
+  font-size: 22px;
+  line-height: 1.25;
+  font-style: italic;
+  color: white;
+  font-weight: 700;
+}
+.capture-priority {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.priority-high { background: #6b1111; color: #ffd9d4; }
+.priority-medium { background: #5e3a00; color: #ffe7c2; }
+.priority-low { background: #1a4a2a; color: #c8f0d8; }
+
+.capture-body { padding: 28px 32px; }
+
+/* OWNER (top) and PRACTITIONER (bottom) sections */
+.capture-section {
+  margin-bottom: 22px;
+}
+.capture-section:last-child { margin-bottom: 0; }
+.capture-section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 2px;
+}
+.label-owner {
+  color: var(--header-dark);
+  background: var(--header-light);
+  border: 1px solid #b8d4ee;
+}
+.label-practitioner {
+  color: #4d2f08;
+  background: var(--warn-light);
+  border: 1px solid #e9c995;
+}
+.capture-section p {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: #2a3744;
+}
+.capture-section p:last-child { margin-bottom: 0; }
+.capture-section strong { color: var(--ink); }
+
+/* Practitioner section: tighter, mono accents */
+.practitioner-block {
+  background: #faf7f0;
+  border: 1px solid #e9c995;
+  border-left: 3px solid var(--warn);
+  border-radius: 0 3px 3px 0;
+  padding: 18px 22px;
+  margin-top: 8px;
+}
+.practitioner-block p {
+  font-size: 14px;
+  color: #3a2a18;
+}
+.practitioner-block strong { color: #2e1b03; }
+.practitioner-block code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: #f0e6d0;
+  border: 1px solid #d8c4a0;
+  padding: 1px 6px;
+  border-radius: 2px;
+  color: #4d2f08;
+  white-space: nowrap;
+}
+.practitioner-block ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+  font-size: 14px;
+}
+.practitioner-block ol li {
+  padding: 3px 0;
+  color: #3a2a18;
+}
+
+/* Inline highlight: "what this surfaces in HARstack" */
+.surfaces {
+  background: var(--ok-light);
+  border-left: 3px solid var(--ok);
+  border-radius: 0 3px 3px 0;
+  padding: 14px 18px;
+  margin: 14px 0 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #163d23;
+}
+.surfaces-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ok);
+  margin-bottom: 4px;
+}
+
+/* ============ CLOSING NOTE ============ */
+.closing {
+  background: white;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 3px 3px 0;
+  padding: 24px 28px;
+  margin-top: 36px;
+}
+.closing-title {
+  font-family: var(--display);
+  font-size: 19px;
+  font-style: italic;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+.closing p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #2a3744;
+  margin: 0 0 10px;
+}
+.closing p:last-child { margin-bottom: 0; }
+
+/* ============ CTA STRIP ============ */
+.cta-strip {
+  background: var(--header-dark);
+  color: white;
+  border-radius: 4px;
+  padding: 28px 32px;
+  margin-top: 32px;
+  text-align: center;
+}
+.cta-strip h2 {
+  font-family: var(--display);
+  font-size: 24px;
+  font-style: italic;
+  margin: 0 0 10px;
+  color: white;
+  font-weight: 700;
+}
+.cta-strip p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.92);
+  margin: 0 0 18px;
+  line-height: 1.6;
+}
+.cta-strip-btn {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--header-dark);
+  background: white;
+  border: 1px solid white;
+  padding: 12px 24px;
+  border-radius: 3px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.cta-strip-btn:hover {
+  background: #c8f0d8;
+  border-color: #c8f0d8;
+}
+
+/* ============ FOOTER ============ */
+footer {
+  text-align: center;
+  padding: 32px 24px 48px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #aaa;
+}
+footer a {
+  color: #888;
+  text-decoration: none;
+  border-bottom: 1px dotted #ccc;
+}
+footer a:hover { color: var(--header); }
+.foot-sep { color: #ccc; margin: 0 10px; }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 720px) {
+  .hero { padding: 36px 18px 24px; }
+  .hero h1 { font-size: 30px; }
+  .hero-sub { font-size: 15px; }
+  main { padding: 32px 18px 60px; }
+  .capture-body { padding: 22px 20px; }
+  .capture-header { padding: 16px 20px; flex-wrap: wrap; }
+  .capture-title { font-size: 18px; }
+  .masthead-tool { display: none; }
+  .masthead-local-text { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<div class="masthead">
+  <span class="masthead-brand">Pixel and Policy</span>
+  <span class="masthead-sep">|</span>
+  <span class="masthead-tool">HARstack · Captures</span>
+  <a href="https://harstack.com/" class="masthead-home" aria-label="HARstack home">Home</a>
+  <span class="masthead-local" aria-label="HARstack tools process files locally in the browser">
+    <span class="masthead-local-dot" aria-hidden="true"></span>
+    <span class="masthead-local-text">Local only</span>
+  </span>
+  <div class="masthead-spacer"></div>
+  <a href="https://harstack.com/tool/" class="masthead-wizard">Open the audit tool →</a>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">HARstack · Capture guide</div>
+    <h1>One audit is not <em>the audit</em>.</h1>
+    <p class="hero-sub">A homepage capture shows the visit-time tracking surface. A form-submit capture shows the conversion-time exposure. A pre-consent capture shows what fires before the user agrees to anything. They are different audits. Run more than one.</p>
+    <a href="https://harstack.com/tool/" class="hero-back">← Back to the audit tool</a>
+  </div>
+</section>
+
+<!-- ============ MAIN ============ -->
+<main>
+
+<!-- LEDE -->
+<p class="lede">
+HARstack reads one HAR file at a time. The report you get is faithful to that file. It is not, on its own, an audit of your site. A site can look clean on the homepage and look like a serious exposure on the form submit. The same homepage with GPC on and GPC off can produce two different reports. The same checkout flow on mobile and desktop can fire different trackers.
+</p>
+
+<p class="lede">
+This page is a guide to the kinds of captures worth running, what each one shows, and how to do it. Some are quick and obvious. A few are the captures that meaningfully change how you understand your stack.
+</p>
+
+<div class="lede-cmd">
+  <strong>The short version.</strong> If you run only one capture, run a homepage capture in Firefox Private. If you run only two, add a form-submit capture in the same browser. If you can run three, add a GPC-on capture in Brave with default settings. Most other captures on this page are refinements of those three.
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<nav class="toc" aria-label="Capture types">
+  <div class="toc-title">Eight captures worth running</div>
+  <ol>
+    <li><a href="#cap-homepage">Homepage capture · the baseline</a></li>
+    <li><a href="#cap-form">Form-submit capture · where the data actually flows</a></li>
+    <li><a href="#cap-checkout">Checkout or payment capture · the highest-stakes path</a></li>
+    <li><a href="#cap-authed">Authenticated page capture · what trackers see after login</a></li>
+    <li><a href="#cap-gpc">GPC-on vs GPC-off capture · the compliance test</a></li>
+    <li><a href="#cap-session">Cross-page session capture · the funnel and the cookies</a></li>
+    <li><a href="#cap-mobile">Mobile viewport capture · the smaller other site</a></li>
+    <li><a href="#cap-consent-flip">Consent-flip capture · the signal-propagation test</a></li>
+  </ol>
+  <p class="toc-note">The eighth capture is the one HARstack's consent-signal findings explicitly point you toward. Run it when the audit surfaces a finding about Google Consent Mode signals, Meta Data Processing Options, or Microsoft UET consent state.</p>
+</nav>
+
+<!-- ===================================================== -->
+<!-- 1. HOMEPAGE CAPTURE                                    -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-homepage">
+  <div class="capture-header">
+    <div class="capture-num">1</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">The homepage capture</div>
+    </div>
+    <span class="capture-priority priority-high">Always run</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>This is the baseline. Open your homepage in a fresh browser session, capture, and audit. The report tells you what fires the moment a visitor arrives, before any interaction, before any consent decision, before any form. This is the tracking surface every visitor encounters, including the ones who leave after three seconds.</p>
+      <p>A homepage capture answers one question very well: what do we ship by default? Everything else in this guide is some variation of "and what happens when the user does X?"</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      Tracker inventory · third-party domain map · CMP load order and timing · GPC response · cookies set on first contact · body-fingerprint detection for first-party-proxied trackers · the "no CMP detected" finding if you are missing one.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p><strong>Recommended browser:</strong> Firefox Private Window. Exports the most complete HAR file. Includes full response bodies, which enables HARstack's body-fingerprint scanner to catch trackers hiding behind first-party subdomains.</p>
+        <ol>
+          <li>Open Firefox Private Window with <code>Ctrl+Shift+P</code> or <code>⌘+Shift+P</code></li>
+          <li>Open DevTools with <code>F12</code> and click the Network tab</li>
+          <li>Navigate to your homepage. Watch the Network panel fill</li>
+          <li>Wait until network activity quiets down. Five to ten seconds after page load is usually enough</li>
+          <li>Right-click anywhere in the Network panel and choose <strong>Save All As HAR</strong></li>
+        </ol>
+        <p style="margin-top:10px;">Do not log in. Do not click anything else first. The homepage capture is about the default state.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<!-- 2. FORM-SUBMIT CAPTURE                                 -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-form">
+  <div class="capture-header">
+    <div class="capture-num">2</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">The form-submit capture</div>
+    </div>
+    <span class="capture-priority priority-high">High value</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>This is the capture that earns its name. A homepage capture shows the tracking that runs on arrival. A form-submit capture shows the tracking that runs at the moment a visitor hands over a name, email, phone number, or anything else. Those are two different exposures and they deserve two different audits.</p>
+      <p>When a user submits a contact form, a lead form, a newsletter sign-up, or any form that takes their information, your stack does things that are invisible on the homepage. It hashes their email and sends it server-side to ad platforms. It fires conversion pixels with their data attached. It may capture the field values themselves in a session-replay recording. None of this shows up if you only ever capture the homepage.</p>
+      <p>If you only run one capture beyond the homepage, run this one.</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      Hashed PII in POST bodies (Meta CAPI, Reddit CAPI, Google Enhanced Conversions, TikTok Events) · raw PII in POST bodies (form values shipped to third parties unhashed) · session-replay payloads containing form field contents · the consent-enforcement-gap finding when trackers fire despite a consent denial · the body-fingerprint scanner picking up tracker payloads served from first-party subdomains.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p><strong>The key trick:</strong> keep DevTools recording across the submit. The HAR has to contain the POST request and any third-party requests fired as a result of the submit. If you stop recording too early, you capture only the page load and the audit will read like a homepage capture.</p>
+        <ol>
+          <li>Open Firefox Private Window. Open DevTools, Network tab</li>
+          <li>Navigate to the page with the form</li>
+          <li>Fill the form with realistic but disposable values. Use <code>test+harstack@yourdomain.com</code> rather than something tied to an actual person</li>
+          <li>Verify DevTools is still recording — the red record dot should be on. Submit the form</li>
+          <li>Wait for any thank-you or confirmation page to fully load. Wait another five to ten seconds. Most CAPI calls fire on a small delay</li>
+          <li>Right-click the Network panel → <strong>Save All As HAR</strong></li>
+        </ol>
+        <p style="margin-top:10px;"><strong>If your form is part of a multi-step funnel,</strong> capture through to the step where the data is actually committed. Some funnels collect a name on step one but only POST the data after step three.</p>
+        <p style="margin-top:10px;"><strong>Sanitize concern.</strong> The HAR will contain the form values you typed. HARstack processes it locally in your browser. If you share the file with anyone, use the Export Sanitized HAR button in the report. That export strips request bodies, response bodies, cookie values, and credentials while keeping the URLs and field paths the audit was based on.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<!-- 3. CHECKOUT / PAYMENT CAPTURE                          -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-checkout">
+  <div class="capture-header">
+    <div class="capture-num">3</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">The checkout or payment capture</div>
+    </div>
+    <span class="capture-priority priority-high">Critical for e-commerce / fintech</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>A checkout flow is a form-submit capture with stakes. The data fields are not just contact information; they include payment card numbers, billing addresses, transaction amounts, and sometimes account or routing information. The trackers that fire during checkout are often configured to capture purchase value and customer identifiers for ad attribution.</p>
+      <p>If your site has a payment flow, this capture is the most important audit you can run. The information involved is more sensitive than a lead form. Mistakes here are more expensive and the regulatory framing is heavier. Run this capture before you launch any new ad pixel, any new analytics SDK, any new third-party integration that touches the checkout page.</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      Payment-related fields appearing in third-party POST bodies · session replay recording on pages where card numbers are entered · purchase-event payloads to ad platforms including transaction value and order ID · CDP events tagged with customer identifiers · cookies set with cross-domain scope during checkout.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p>Same workflow as the form-submit capture, with extra care about test data and what happens after.</p>
+        <ol>
+          <li>Open Firefox Private. DevTools, Network tab</li>
+          <li>Navigate through your funnel: product → cart → checkout</li>
+          <li>If you have a test card or sandbox mode, use it. <strong>Do not put a real card in for an audit capture you might keep on disk or share.</strong> If you have to use a real card, plan to delete the HAR after running it through HARstack</li>
+          <li>Complete the purchase or, if there is a final "place order" button, capture up to but not including it if your sandbox cannot process the transaction</li>
+          <li>Wait for the confirmation page or post-purchase page to fully settle</li>
+          <li>Export the HAR</li>
+        </ol>
+        <p style="margin-top:10px;"><strong>If your checkout is hosted on a payment processor's domain</strong> (Stripe Checkout, Shopify Checkout, a separate subdomain you do not control), the HAR will only show what fires on the pages you load. The processor's domain is the processor's problem. But the pre-checkout and post-checkout pages on your domain are still yours.</p>
+        <p style="margin-top:10px;"><strong>If you process payments through embedded BaaS</strong> (Thread Bank, Bond, Marqeta, Unit), your stack is subject to GLBA. The trackers that fire on pages where account or payment information is entered are evaluated against the Safeguards Rule, not just the FTC Act. HARstack does not make this determination for you, but a finding involving a session-replay tool on a money-movement page is the finding that warrants the most urgent investigation.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<!-- 4. AUTHENTICATED PAGE                                  -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-authed">
+  <div class="capture-header">
+    <div class="capture-num">4</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">The authenticated page capture</div>
+    </div>
+    <span class="capture-priority priority-medium">Run if you have a login</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>What trackers fire on a page only your logged-in users see? Many sites apply consent and tracking rules to their public pages and then carry a different, looser configuration through to the authenticated experience. A dashboard, an account settings page, or a transaction history page may be carrying tracking it should not.</p>
+      <p>The other thing this capture surfaces: identity. Once a user is logged in, your stack knows who they are. If a tracker fires on an authenticated page, that tracker can now associate behavior with a specific person, not just a browser fingerprint. The privacy implication of session replay on a logged-out marketing page is different from session replay on a logged-in account page, even if it is the same tool with the same configuration.</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      Trackers fired on authenticated pages that should not be there · user identifiers appearing in POST bodies to third parties · cookies that persist across the auth boundary and may now be associated with a known user · CDP <code>identify</code> calls that ship user IDs to ad platforms that did not have them before.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p><strong>Use a test account.</strong> Not your own. The HAR will contain whatever session cookies and user IDs are associated with the account you used.</p>
+        <ol>
+          <li>Create or use a test account dedicated to audits. Note the account ID somewhere</li>
+          <li>Open Firefox Private. Log in to the test account through your normal sign-in flow</li>
+          <li>Once you are inside the app, open DevTools, Network tab. Reload the page so the Network panel captures the authenticated load from the start</li>
+          <li>Navigate to whichever authenticated pages you most want audited: dashboard, account settings, transaction history, profile</li>
+          <li>Export the HAR</li>
+        </ol>
+        <p style="margin-top:10px;"><strong>Run this capture more than once</strong> for sites with multiple distinct authenticated surfaces. The trackers on an admin dashboard often differ from the trackers on a customer-facing account page.</p>
+        <p style="margin-top:10px;"><strong>Sanitize concern.</strong> The HAR will contain session cookies that belong to the test account. The Export Sanitized HAR button strips these before any sharing. Or delete the test session after the audit.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<!-- 5. GPC-ON vs GPC-OFF                                   -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-gpc">
+  <div class="capture-header">
+    <div class="capture-num">5</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">GPC-on vs GPC-off comparison</div>
+    </div>
+    <span class="capture-priority priority-high">The compliance test</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>Global Privacy Control is a signal a visitor's browser sends that says, in effect, "do not sell or share my data." The right thing for a site to do when it receives this signal is to suppress the trackers that sell or share data. The wrong thing is to keep firing them anyway. The difference between right and wrong is enforceable under California law.</p>
+      <p>You cannot tell from a single capture whether your site is doing the right thing. You can only tell by capturing twice — once with GPC active, once without — and comparing what fires. If the GPC-on capture shows the same advertising trackers firing as the GPC-off capture, your site is not responding to the signal. That is a finding.</p>
+      <p>The same workflow tests something else worth knowing: <strong>pre-consent vs post-consent behavior</strong>. Capture the site before you click "Accept" on the consent banner. Then capture again after. If the two captures look the same, your consent banner is decorative. If they differ, the gating is real.</p>
+      <p>This capture tells you <em>whether</em> your stack responds to the signal. The <a href="#cap-consent-flip">consent-flip capture</a> below tells you <em>how</em> it responds — whether the consent state was actually propagated to each ad platform, or whether the trackers fired with their default-granted state because nothing wired the signal through.</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      The "GPC verified active in HAR" indicator confirms the signal was actually present in the request headers · the consent-enforcement-gap finding flags sale-and-sharing trackers that fired despite GPC · the CMP load order and timing tells you whether consent state was even resolved before trackers fired · the platform-by-platform breakdown shows which specific ad networks ignored the signal.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p><strong>You need two captures, same page, same session shape, different signal posture.</strong></p>
+        <ol>
+          <li><strong>Capture A — GPC off.</strong> Open Firefox Private Window. Do not install a GPC extension. Navigate to the page. Export the HAR. Label it <code>page-gpc-off.har</code></li>
+          <li><strong>Capture B — GPC on.</strong> Either use Brave (which ships GPC on by default), or open a fresh Firefox Private session with Privacy Badger or a dedicated GPC extension installed and verified active. Navigate to the same page. Export. Label it <code>page-gpc-on.har</code></li>
+          <li>Run both through HARstack separately. For the GPC-on capture, answer "Yes: GPC active" on Step 2. For the off capture, "No: no GPC signal"</li>
+          <li>Compare the two reports side by side. The trackers that appear in both are the ones your stack is firing regardless of GPC</li>
+        </ol>
+        <p style="margin-top:10px;"><strong>The same procedure tests the consent banner.</strong> Run one capture where you do not interact with the banner at all. Run a second where you accept everything. Compare. The trackers in the first capture are the ones that fire pre-consent, which should be a much shorter list than the second.</p>
+        <p style="margin-top:10px;"><strong>A practical note about Brave.</strong> Brave blocks more than just sale-and-sharing trackers; it also fingerprints requests and blocks third-party cookies. A Brave capture is informative, but it is a privacy floor, not a clean GPC test. For a strict GPC test, use Firefox with a GPC extension and Brave separately, then compare.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<!-- 6. CROSS-PAGE SESSION                                  -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-session">
+  <div class="capture-header">
+    <div class="capture-num">6</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">The cross-page session capture</div>
+    </div>
+    <span class="capture-priority priority-medium">Run for funnels and shops</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>A real visitor does not land on your homepage and leave. They click around. They view two pages, three, sometimes more. They add to cart. They abandon. They come back. The captures so far in this guide are snapshots of single pages or single events. A cross-page session capture is the visit itself.</p>
+      <p>This capture surfaces cookie persistence and identity stitching. Some cookies are set on the homepage and never touched again. Some get re-read on every page. Some receive new values as the user navigates. Some trackers carry visitor identifiers from one page to the next, building a profile across the session that no single-page capture would reveal. If you want to understand what your stack actually learns about a visitor across a normal visit, this is the capture for that.</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      Long-lived cookies set early in the session · visitor and session identifiers carried across page loads · the same tracker firing on every page versus only on specific pages · CDP identity calls that progressively enrich a user profile as the session continues · third-party cookies that survive cross-domain navigation.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p><strong>Keep DevTools recording across navigation.</strong> By default, Firefox and Chrome clear the Network panel on each page load. You need to disable that.</p>
+        <ol>
+          <li>Open Firefox Private. Open DevTools, Network tab</li>
+          <li>In the Network panel, check the <strong>Persist Logs</strong> option (Firefox) or <strong>Preserve log</strong> option (Chrome). This tells DevTools to keep recording across page loads</li>
+          <li>Navigate through a realistic visitor path. Homepage → category page → product page → add to cart → cart page. Or homepage → blog post → contact page → form submit</li>
+          <li>Do not click around randomly. Pick a path that represents a real user journey for your site</li>
+          <li>Once you reach the end of the path, export the HAR. It will now contain every request from every page in the session</li>
+        </ol>
+        <p style="margin-top:10px;"><strong>HARstack reads the whole HAR.</strong> When the report runs against a multi-page HAR, the third-party domain table shows the union of every domain contacted across the session. The cookie summary reflects cookies set or modified at any point in the session. The total tracker count is the count of distinct trackers across the visit, not per page.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<!-- 7. MOBILE                                              -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-mobile">
+  <div class="capture-header">
+    <div class="capture-num">7</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">The mobile viewport capture</div>
+    </div>
+    <span class="capture-priority priority-low">Worth running once</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>A surprising number of sites fire different tags on mobile. Some load mobile-specific app-install banners. Some ship lighter analytics on small viewports to keep page weight down. Some fire heavier ad-tracking on mobile because mobile traffic is more valuable to specific platforms. If most of your visitors are on phones and you only ever audit on desktop, you are auditing the wrong site.</p>
+      <p>This capture is also a fast way to detect mobile-only third-party SDKs or scripts you may not have known were running.</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      Trackers that only fire on mobile-sized viewports · app-install banner integrations · mobile-specific advertising SDKs · differences in CMP behavior between desktop and mobile · cookies set with mobile-specific scopes or paths.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p><strong>You do not need an actual phone.</strong> Browser DevTools include a device emulation mode that changes the viewport size, user agent, and other signals that determine how a site renders.</p>
+        <ol>
+          <li>Open Firefox Private. Open DevTools</li>
+          <li>Click the responsive design mode icon (a small phone-tablet icon in the DevTools toolbar) or press <code>Ctrl+Shift+M</code></li>
+          <li>Select a mobile preset (iPhone, Pixel, Galaxy — any of them is fine for this purpose)</li>
+          <li>Reload the page. Both the viewport and the user-agent string now look like a mobile device to your site</li>
+          <li>Switch to the Network tab and capture as you would for any other capture type — homepage load, form submit, checkout, whichever you are comparing</li>
+          <li>Export the HAR. Label it with the device preset you used</li>
+        </ol>
+        <p style="margin-top:10px;"><strong>Caveat about native mobile apps.</strong> A HAR file captures browser traffic. It does not capture what a native iOS or Android app does. If your business has a real mobile app, the HAR audit covers the web side only. The app side requires separate tooling.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<!-- 8. CONSENT-FLIP CAPTURE                                -->
+<!-- ===================================================== -->
+<section class="capture" id="cap-consent-flip">
+  <div class="capture-header">
+    <div class="capture-num">8</div>
+    <div class="capture-title-wrap">
+      <div class="capture-eyebrow">Capture type</div>
+      <div class="capture-title">The consent-flip capture</div>
+    </div>
+    <span class="capture-priority priority-high">Signal-propagation test</span>
+  </div>
+  <div class="capture-body">
+
+    <div class="capture-section">
+      <span class="capture-section-label label-owner">What it shows</span>
+      <p>The five captures above tell you what fires. They do not tell you <em>how</em> each tracker thinks about the user's consent state at the moment of firing. Two different sites can produce identical tracker inventories and have completely different exposure profiles, depending on whether the trackers are receiving an accurate consent signal from your stack.</p>
+      <p>The consent-flip capture is three captures of the same page under three different consent states. Pre-consent, where the visitor has not yet interacted with your consent banner. Post-grant, where they clicked "Accept all." Post-denial, where they clicked "Reject all" (or where they sent GPC). The three captures, compared side by side, tell you whether the consent banner is actually wired to the trackers, and whether each tracker received the consent signal in the format it expects.</p>
+      <p>This is the capture HARstack's consent-signal findings explicitly point you toward. When the audit surfaces "Google Consent Mode v2 not wired," or "Meta Pixel fired with no Data Processing Options signal," or "Microsoft UET fired with consent granted despite GPC," the consent-flip capture is how you verify whether the finding is intermittent, persistent, or actually correct.</p>
+    </div>
+
+    <div class="surfaces">
+      <div class="surfaces-title">What HARstack surfaces</div>
+      Google Consent Mode v2 signal parameters (gcs, gcd, dma, npa) on every /g/collect and /ccm/collect hit · Meta Data Processing Options (dpo, dpoco, dpost) and Advanced Matching fields on every facebook.com/tr request · Microsoft UET consent state (gv, enableMUID) on every bat.bing.com/action hit · click-ID propagation through tracker requests · the "consent mode not wired" finding when Google requests fire without any gcs parameter at all.
+    </div>
+
+    <div class="capture-section">
+      <span class="capture-section-label label-practitioner">How to capture</span>
+      <div class="practitioner-block">
+        <p><strong>Three captures of the same page, in this order.</strong> The order matters because consent state persists in cookies and localStorage, and you want a clean slate before each capture.</p>
+        <ol>
+          <li><strong>Capture A — pre-consent.</strong> Open Firefox Private Window. Open DevTools, Network tab. Navigate to the page. Do not interact with the consent banner at all. Wait for the page to settle, then export. Label it <code>page-preconsent.har</code></li>
+          <li><strong>Capture B — post-grant.</strong> Close the Private Window. Open a fresh Private Window. Navigate to the same page. Click "Accept all" in the consent banner. Reload the page so you capture a full session under the granted state. Export. Label it <code>page-grant.har</code></li>
+          <li><strong>Capture C — post-denial.</strong> Close the Private Window. Open a fresh Private Window. Navigate to the same page. Click "Reject all" or the equivalent denial action in the consent banner. Reload. Export. Label it <code>page-deny.har</code></li>
+          <li>Run all three through HARstack separately. For capture A, answer "No: no GPC signal" on Step 2 unless your browser also sends GPC. For B and C, answer according to whether GPC was active</li>
+          <li>Compare the three reports. Look at the consent-signal findings on each: do the gcs values change between B and C? does the dpo parameter appear in C but not B? does Microsoft UET's gv change from 2 to 1? If yes, your consent state is wired correctly. If no, you have a propagation gap</li>
+        </ol>
+        <p style="margin-top:10px;"><strong>This capture pairs with a CMP cookie inspection.</strong> Open DevTools, Application tab, Cookies pane. Find the consent cookie set by your CMP (Osano: <code>osano_consentmanager</code>, OneTrust: <code>OptanonConsent</code>, Cookiebot: <code>CookieConsent</code>, Termly: <code>TERMLY_API_CACHE</code>, CookieYes: <code>cookieyes-consent</code>). Compare the consent state recorded by the CMP against the consent signals appearing in the tracker requests. If the CMP cookie says marketing is denied but the tracker requests carry granted-state signals, the gap is at the CMP-to-tracker handoff. If the CMP cookie itself reflects the wrong state, the gap is at the GPC-to-CMP layer.</p>
+        <p style="margin-top:10px;"><strong>Server-side note.</strong> A consent-flip capture only tells you what the browser-side tracker requests carry. Your server-side conversion APIs (Meta CAPI from your backend, Google Enhanced Conversions via offline upload, Reddit CAPI) make their own consent decisions outside the browser. Those events are not in the HAR. Even a clean consent-flip capture leaves the server-side path unverified. The captures answer "is the browser signal wired correctly." They do not answer "is the backend ignoring the wire."</p>
+        <p style="margin-top:10px;"><strong>If you only run two of the three,</strong> run grant and deny. The pre-consent capture is informative when your consent banner is configured to block trackers entirely until interaction, but most banners do not work that way; pre-consent looks more like the grant capture than you might expect.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CLOSING -->
+<div class="closing">
+  <h2 class="closing-title">A finding warrants investigation. No findings does not mean compliant.</h2>
+  <p>HARstack reads what your browser saw. It does not read your data processor agreements, your tag manager configurations, your server-side pipelines, your authenticated APIs, or your mobile apps. Every capture in this guide is a single window into your stack. The more captures you run, the more windows you have. None of them, individually, is the whole picture.</p>
+  <p>If a capture turns up something that looks like exposure, treat it as a starting point for an investigation. Confirm against your actual configuration. Check your contracts. Talk to your privacy counsel. The audit is the beginning of the conversation, not the end of it.</p>
+</div>
+
+<!-- CTA -->
+<div class="cta-strip">
+  <h2>Ready to capture?</h2>
+  <p>Open the HARstack audit tool. Walk through the wizard. Run your first audit in under five minutes.</p>
+  <a href="https://harstack.com/tool/" class="cta-strip-btn">Open the audit tool →</a>
+</div>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <a href="https://harstack.com/">harstack.com</a>
+  <span class="foot-sep">·</span>
+  <a href="https://pixelandpolicy.com/">pixelandpolicy.com</a>
+  <span class="foot-sep">·</span>
+  <a href="https://harstack.com/harstack.html">Classic two-pane view</a>
+</footer>
+
+</body>
+</html>

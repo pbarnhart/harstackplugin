@@ -1,0 +1,98 @@
+{
+  "references": {
+    "ecpa_wiretap_act": {
+      "short": "ECPA Wiretap Act",
+      "citation": "18 U.S.C. §§ 2510 et seq. (federal Wiretap Act, one-party consent with crime-tort exception)"
+    },
+    "ecpa_privacy_policy_order": {
+      "short": "ECPA Privacy Policy Order (Aug. 2025)",
+      "citation": "Smith v. Rack Room Shoes, Inc., No. 24-CV-06709-RFL, 2025 WL 2210002 (N.D. Cal. Aug. 4, 2025) (Lin, J.). Held that alleged privacy policy misrepresentations can supply the predicate tort needed to defeat the party-consent defense and state a federal Wiretap Act claim."
+    },
+    "cipa_section_631": {
+      "short": "CIPA § 631(a)",
+      "citation": "Cal. Penal Code § 631(a) (California Invasion of Privacy Act wiretapping provision). Note: the Ninth Circuit in September 2025 limited § 631(a) to \"telephone wire, line, cable, or instruments,\" not internet communications. CIPA § 638.51 pen register / trap-and-trace provisions remain active for tracking technology cases."
+    },
+    "cipa_section_632": {
+      "short": "CIPA § 632",
+      "citation": "Cal. Penal Code § 632 (California two-party-consent recording statute)."
+    },
+    "cipa_section_638_51": {
+      "short": "CIPA § 638.51",
+      "citation": "Cal. Penal Code § 638.51 (CIPA pen register / trap-and-trace device provisions). Active vehicle for tracking technology cases after Ninth Circuit's § 631(a) narrowing."
+    },
+    "ccpa_cpra": {
+      "short": "CCPA / CPRA",
+      "citation": "Cal. Civ. Code §§ 1798.100 et seq. (California Consumer Privacy Act as amended by the California Privacy Rights Act)."
+    },
+    "cpra_gpc_135": {
+      "short": "CPRA § 1798.135(b)",
+      "citation": "Cal. Civ. Code § 1798.135(b). Opt-out preference signals: businesses may treat the signal as a valid consumer request to opt out of sale and sharing."
+    },
+    "ccpa_regs_7025": {
+      "short": "CCPA Regs § 7025",
+      "citation": "11 CCR § 7025. The CPPA regulation governing opt-out preference signals. The CPPA position is that businesses must process opt-out preference signals even if they also provide opt-out links."
+    },
+    "sephora_settlement": {
+      "short": "California AG Sephora settlement (Aug. 2022)",
+      "citation": "$1.2 million settlement between the California Attorney General and Sephora USA, Inc. (Aug. 24, 2022). First CCPA enforcement action expressly identifying failure to honor GPC signals as the violation."
+    },
+    "ftc_betterhelp": {
+      "short": "FTC BetterHelp Consent Order",
+      "citation": "In the Matter of BetterHelp, Inc., FTC File No. 2023-169, Docket C-4796 (final order July 14, 2023). $7.8 million settlement and order establishing that hashing fails to protect privacy when the receiving party can un-hash the data. The FTC press release stated that hashing will not protect consumer privacy if third parties can un-hash the data."
+    },
+    "popa_microsoft": {
+      "short": "Popa v. Microsoft (9th Cir. Aug. 2025)",
+      "citation": "Ninth Circuit affirmed district court's dismissal of session replay claims against Microsoft on Article III standing grounds. Standing-based defense win, not a merits ruling on whether session replay is a wiretap."
+    },
+    "taylor_conversenow": {
+      "short": "Taylor v. ConverseNow Technologies (N.D. Cal. Aug. 2025)",
+      "citation": "Taylor v. ConverseNow Technologies, Inc., No. 25-cv-00990-SI (N.D. Cal. Aug. 11, 2025). Court denied motion to dismiss CIPA § 631 and § 632 claims against an AI voice assistant provider. Relevant analog for call tracking and AI conversation analytics platforms."
+    },
+    "vppa": {
+      "short": "VPPA (Video Privacy Protection Act)",
+      "citation": "18 U.S.C. § 2710. Prohibits \"video tape service providers\" from disclosing personally identifiable viewing information without consent. Active circuit split as of 2026 on what counts as disclosure. Applies to embedded video pixels including YouTube embeds and Meta Pixel on video pages."
+    },
+    "coppa": {
+      "short": "COPPA",
+      "citation": "15 U.S.C. §§ 6501-6506 and 16 CFR Part 312. Children's Online Privacy Protection Act. Applies to operators of websites or online services directed to children under 13, or operators with actual knowledge of collecting from minors under 13."
+    },
+    "can_spam": {
+      "short": "CAN-SPAM Act",
+      "citation": "15 U.S.C. §§ 7701-7713 and 16 CFR Part 316. Federal email marketing statute. Requires honoring unsubscribe within 10 business days."
+    },
+    "glba_safeguards": {
+      "short": "GLBA Safeguards Rule",
+      "citation": "15 U.S.C. § 6801 and 16 CFR Part 314 (FTC Safeguards Rule, revised effective 2023). Applies to financial institutions handling nonpublic personal information (NPI)."
+    },
+    "gdpr_lg_munich": {
+      "short": "Google Fonts GDPR ruling (LG München I 2022)",
+      "citation": "LG München I, 20.01.2022, Az. 3 O 17493/20. German Regional Court of Munich held that loading Google Fonts from fonts.googleapis.com without consent violates GDPR because IP transmission to Google has no legitimate basis."
+    },
+    "cnil_13_month": {
+      "short": "CNIL 13-month cookie guidance",
+      "citation": "French Data Protection Authority guidance recommending that consent for non-essential cookies be refreshed at 13 months. Industry standard but not a statutory GDPR threshold."
+    },
+    "microsoft_clarity_terms": {
+      "short": "Microsoft Clarity Terms § 4.4(c)(iii)",
+      "citation": "Microsoft's Clarity terms reserve the right to use collected Personal Data to \"create user profiles for purposes that include advertising.\" Microsoft acts as an independent data controller, not a service provider."
+    },
+    "microsoft_clarity_consent_2025": {
+      "short": "Microsoft Clarity EEA/UK/Switzerland consent enforcement (Oct. 31, 2025)",
+      "citation": "Microsoft began requiring valid consent signals via the Clarity Consent API for visitors from the European Economic Area, the United Kingdom, and Switzerland before Clarity collects data."
+    },
+    "ninth_circuit_cipa_internet": {
+      "short": "Ninth Circuit CIPA § 631(a) limitation (Sept. 2025)",
+      "citation": "Ninth Circuit ruling limiting CIPA § 631(a) to \"telephone wire, line, cable, or instruments\" and excluding internet communications from that provision. Plaintiffs have shifted to CIPA § 638.51 and ECPA for internet tracking technology cases."
+    }
+  },
+  "reg_map": {
+    "ECPA":      ["ecpa_wiretap_act", "ecpa_privacy_policy_order"],
+    "CIPA":      ["cipa_section_631", "cipa_section_632", "cipa_section_638_51", "ninth_circuit_cipa_internet"],
+    "CCPA/CPRA": ["ccpa_cpra", "cpra_gpc_135", "ccpa_regs_7025", "sephora_settlement", "ftc_betterhelp"],
+    "VPPA":      ["vppa"],
+    "COPPA":     ["coppa"],
+    "CAN-SPAM":  ["can_spam"],
+    "GLBA":      ["glba_safeguards"],
+    "GDPR":      ["gdpr_lg_munich"]
+  }
+}

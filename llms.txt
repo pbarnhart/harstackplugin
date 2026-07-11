@@ -1,0 +1,56 @@
+# HARstack
+
+> Audit your stack. Start with the HAR. A free, open-source HAR file analyzer for martech engineers, privacy professionals, and compliance teams. MIT license. Runs entirely in the browser. No data transmitted.
+
+## What it is
+
+HARstack is a single HTML file that reads an HTTP Archive (HAR) file exported from browser DevTools and identifies tracking technologies, PII transmission patterns, consent signal gaps, and regulatory exposure across a live web stack.
+
+It is not a compliance determination tool. It is a first-pass screening instrument that produces structured findings for review by privacy counsel, compliance teams, or internal martech and security functions.
+
+## Who it is for
+
+- Martech engineers testing new tag deployments before they ship
+- Privacy professionals and compliance auditors doing first-pass screening without full tool access
+- Legal and compliance teams who need findings in plain language with specific regulatory citations
+- Developers who want to verify tracking behavior during development without uploading sensitive files to external platforms
+
+## What it detects
+
+- 155+ tracker and technology signatures: advertising pixels, session replay tools, CDPs, consent management platforms, tag managers, affiliate networks, call tracking, identity resolution
+- POST body PII: raw and hashed personally identifiable information transmitted to first-party and third-party endpoints
+- GPC signal verification: checks whether Sec-GPC header appears in actual request headers, not just self-reported settings
+- Server-side GTM detection: identifies server-side container deployments and consent bypass risk
+- CMP load order: detects whether consent management loads before or after tracking scripts
+
+## Regulatory coverage
+
+Findings include citations to: ECPA (18 U.S.C. § 2511), CIPA (Cal. Pen. Code § 631(a)), CCPA/CPRA, GLBA Safeguards Rule (16 CFR § 313), VPPA (18 U.S.C. § 2710), CAN-SPAM Act, FTC enforcement actions including BetterHelp (FTC Docket No. 2023-169).
+
+## Output
+
+- Outcome bucket: Escalate, Needs Review, or Likely OK
+- Per-finding confidence levels: Observed, Likely, Heuristic, Needs Legal Review
+- Owner routing: which team or function should handle each finding
+- Audit questions derived from observed findings
+- Sanitized HAR export: PII and session credentials stripped for safe upload to AI tools
+- Analysis JSON export: structured findings with legal citations
+
+## Important note on HAR file safety
+
+Raw HAR files captured during authenticated sessions contain session cookies, authorization tokens, and full request/response bodies that may include PII, account data, and credentials. Uploading raw HAR files to AI tools or cloud platforms creates security and compliance exposure. This tool runs entirely locally. The sanitized export is designed for safe upstream AI analysis.
+
+## License
+
+MIT. Free to use, fork, and extend.
+
+## Author
+
+Phil Barnhart, CIPP/US. Principal Consultant at YourExitRamp LLC. Publisher of Pixel and Policy (pixelsandpolicy.substack.com), a newsletter covering martech, privacy law, and compliance.
+
+## Links
+
+- Tool: https://harstack.com/tool/
+- GitHub: https://github.com/pbarnhart/harstack
+- Newsletter: https://pixelsandpolicy.substack.com
+- Issues: https://github.com/pbarnhart/harstack/issues

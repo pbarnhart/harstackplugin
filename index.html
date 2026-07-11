@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HARstack -- Audit Your Stack. Start With the HAR.</title>
+<meta name="description" content="HARstack is a free, open-source HAR file analyzer that surfaces tracking technology exposure before plaintiffs' attorneys do. MIT license. No account. No data collection. Runs entirely in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a2030;
+  --paper: #ffffff;
+  --paper-dark: #f0f4f8;
+  --paper-mid: #f7f9fb;
+  --rule: #c8d4e0;
+  --rule-light: #e2eaf2;
+  --accent: #b83228;
+  --accent-dark: #8c1f17;
+  --accent-light: #fdf0ee;
+  --gold: #8c6d1f;
+  --gold-light: #f9f3e6;
+  --mono: 'IBM Plex Mono', monospace;
+  --serif: 'Libre Baskerville', Georgia, serif;
+  --sans: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.7;
+}
+
+/* MASTHEAD */
+.masthead {
+  border-bottom: 3px double var(--rule);
+  padding: 18px 0 14px;
+  text-align: center;
+  background: var(--paper);
+}
+.masthead-eyebrow {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.masthead-title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.masthead-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.masthead-rule {
+  width: 60px;
+  height: 1px;
+  background: var(--rule);
+  margin: 14px auto;
+}
+.masthead-sub {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: #666;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+
+/* DATELINE BAR */
+.dateline {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 7px 32px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+.dateline-item { color: #aaa; }
+.dateline-item strong { color: var(--paper); }
+.dateline-sep { color: #444; }
+.dateline-link { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.6); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.25); padding-bottom: 1px; }
+.dateline-link:hover { color: white; border-bottom-color: white; }
+.mit-badge {
+  margin-left: auto;
+  background: rgba(184,50,40,0.2);
+  border: 1px solid rgba(184,50,40,0.4);
+  color: #f99;
+  padding: 2px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.14em;
+}
+
+/* LAYOUT */
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* LEDE */
+.lede {
+  border-bottom: 1px solid var(--rule);
+  padding: 52px 0 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+@media (max-width: 680px) {
+  .lede { grid-template-columns: 1fr; gap: 32px; }
+}
+.lede-primary {}
+.lede-kicker {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lede-kicker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.3;
+}
+.lede-headline {
+  font-family: var(--serif);
+  font-size: clamp(22px, 3.5vw, 36px);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  margin-bottom: 20px;
+}
+.lede-body {
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.75;
+  color: #333;
+  font-weight: 300;
+}
+.lede-body p + p { margin-top: 14px; }
+
+.lede-secondary {
+  padding-top: 4px;
+}
+.stat-block {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.stat-block::before {
+  content: '';
+  position: absolute;
+  top: 6px; left: 6px; right: -6px; bottom: -6px;
+  border: 1px solid var(--rule);
+  z-index: -1;
+}
+.stat-num {
+  font-family: var(--serif);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  display: block;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: #aaa;
+  font-weight: 300;
+  line-height: 1.5;
+}
+.stat-cite {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #555;
+  letter-spacing: 0.06em;
+  margin-top: 8px;
+  display: block;
+}
+
+.lede-cta-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-primary {
+  display: block;
+  background: var(--accent);
+  color: white;
+  padding: 14px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-secondary {
+  display: block;
+  background: transparent;
+  color: var(--ink);
+  padding: 12px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-align: center;
+  border: 1px solid var(--rule);
+  transition: border-color 0.15s;
+}
+.btn-secondary:hover { border-color: var(--ink); }
+.btn-note {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #999;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+/* RULE QUOTE */
+.pullquote {
+  border-top: 3px double var(--rule);
+  border-bottom: 3px double var(--rule);
+  padding: 36px 0;
+  margin: 48px 0;
+  text-align: center;
+}
+.pullquote-text {
+  font-family: var(--serif);
+  font-size: clamp(18px, 2.5vw, 26px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.45;
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--ink);
+}
+.pullquote-attr {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 16px;
+}
+
+/* SECTION */
+.section {
+  padding: 44px 0;
+  border-bottom: 1px solid var(--rule-light);
+}
+.section-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule-light);
+}
+.section-headline {
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.8vw, 28px);
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* FINDING GRID */
+.finding-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+.finding-card {
+  border: 1px solid var(--rule-light);
+  border-top: 3px solid var(--accent);
+  background: white;
+  padding: 20px 18px;
+}
+.finding-card.warn { border-top-color: #c47a1a; }
+.finding-card.ok { border-top-color: #2a7a4f; }
+.finding-type {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 8px;
+}
+.finding-title {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+.finding-body {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: #444;
+  font-weight: 300;
+}
+.finding-regs {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.reg-chip {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--rule);
+  padding: 2px 7px;
+  color: #666;
+  border-radius: 2px;
+}
+.reg-chip.re  { background: #fde8e8; color: #8b1a1a; border-color: #fde8e8; }
+.reg-chip.rc2 { background: #e8f0e8; color: #1a5b1a; border-color: #e8f0e8; }
+.reg-chip.ri  { background: #ffe8cc; color: #8b4500; border-color: #ffe8cc; }
+.reg-chip.rg  { background: #e8e8fc; color: #1a1a8b; border-color: #e8e8fc; }
+
+/* OUTCOME BUCKETS */
+.bucket-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--rule);
+  margin-top: 28px;
+}
+@media (max-width: 560px) {
+  .bucket-row { grid-template-columns: 1fr; }
+}
+.bucket {
+  padding: 24px 20px;
+  border-right: 1px solid var(--rule);
+  text-align: center;
+}
+.bucket:last-child { border-right: none; }
+.bucket-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 8px;
+}
+.bucket-name {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.bucket-name.escalate { color: var(--accent); }
+.bucket-name.review { color: #c47a1a; }
+.bucket-name.ok { color: #2a7a4f; }
+.bucket-body {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: #555;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* CASE LAW STRIP */
+.case-strip {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 40px 0;
+  margin: 48px 0;
+}
+.case-strip .page {}
+.case-strip-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 20px;
+}
+.case-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+.case-item {}
+.case-cite {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  display: block;
+}
+.case-title {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--paper);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.case-body {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: #aaa;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* ABOUT */
+.about-strip {
+  border: 1px solid var(--rule);
+  padding: 36px 32px;
+  margin: 48px 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 560px) {
+  .about-strip { grid-template-columns: 1fr; }
+}
+.about-monogram {
+  width: 60px;
+  height: 60px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 700;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.about-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.about-name {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.about-creds {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #888;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+.about-body {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: #444;
+  font-weight: 300;
+  line-height: 1.7;
+}
+
+/* FOOTER */
+footer {
+  border-top: 3px double var(--rule);
+  padding: 28px 0;
+  text-align: center;
+}
+.footer-brand {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.footer-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 16px;
+}
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.footer-links a {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888;
+  text-decoration: none;
+}
+.footer-links a:hover { color: var(--accent); }
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.lede-primary { animation: fadeUp 0.6s ease both; }
+.lede-secondary { animation: fadeUp 0.6s ease 0.15s both; }
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "HARstack",
+  "alternateName": "HARstack by Pixel and Policy",
+  "description": "A free, open-source HAR file analyzer that identifies tracking technologies, PII transmission patterns, consent signal gaps, and regulatory exposure. Runs entirely in the browser. No data transmitted.",
+  "url": "https://harstack.com",
+  "downloadUrl": "https://github.com/pbarnhart/harstack/releases/latest/download/harstack.html",
+  "applicationCategory": "SecurityApplication",
+  "operatingSystem": "Any (browser-based)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "license": "https://opensource.org/licenses/MIT",
+  "softwareVersion": "2.0",
+  "author": {
+    "@type": "Person",
+    "name": "Phil Barnhart",
+    "url": "https://pixelsandpolicy.substack.com",
+    "jobTitle": "Director of Marketing Technology",
+    "sameAs": [
+      "https://linkedin.com/in/pbarnhart",
+      "https://github.com/pbarnhart"
+    ],
+    "hasCredential": {
+      "@type": "EducationalOccupationalCredential",
+      "name": "CIPP/US",
+      "credentialCategory": "Professional Certification",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "International Association of Privacy Professionals"
+      }
+    }
+  },
+  "keywords": [
+    "HAR file analyzer",
+    "privacy audit",
+    "tracking technology",
+    "ECPA compliance",
+    "CCPA compliance",
+    "martech compliance",
+    "consent management audit",
+    "GPC verification",
+    "session replay detection",
+    "privacy stack"
+  ],
+  "featureList": [
+    "200+ tracker signatures with regulatory framing",
+    "Response body vendor fingerprinting for CNAME detection",
+    "POST body PII scanning",
+    "GPC signal verification from request headers",
+    "Server-side GTM detection",
+    "Sanitized HAR export for safe AI upload",
+    "Analysis JSON export with legal citations",
+    "Outcome classification: Escalate, Needs Review, Likely OK",
+    "Per-finding confidence levels and owner routing",
+    "Business context regulatory modulation"
+  ]
+}
+</script>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-eyebrow">Pixel and Policy</div>
+  <div class="masthead-title">HAR<em>stack</em></div>
+  <div class="masthead-rule"></div>
+  <div class="masthead-sub">Audit your stack. Start with the HAR.</div>
+</div>
+
+<div class="dateline">
+  <span class="dateline-item"><strong>HARstack</strong> v2.0</span>
+  <span class="dateline-sep">|</span>
+  <span class="dateline-item"><strong>License</strong> MIT</span>
+  <span class="dateline-sep">|</span>
+  <span class="dateline-item"><strong>Signatures</strong> 200+</span>
+  <span class="dateline-sep">|</span>
+  <span class="dateline-item"><strong>Regulations</strong> ECPA, CIPA, US State Privacy, GLBA</span>
+  <span class="dateline-sep">|</span>
+  <span class="dateline-item"><strong>Data Collected</strong> None</span>
+  <a href="/captures/" class="dateline-link">Capture Guide</a>
+  <span class="mit-badge">MIT Open Source</span>
+</div>
+
+<div class="page">
+
+  <div class="lede">
+    <div class="lede-primary">
+      <div class="lede-kicker">The Problem</div>
+      <h1 class="lede-headline">Your privacy policy is the plaintiff's exhibit. This tool checks it before they do.</h1>
+      <div class="lede-body">
+        <p>In August 2025, a federal judge in the Northern District of California let a federal wiretapping claim survive against a shoe retailer. The evidence was the company's own privacy policy. It said the site did not collect personally identifiable information. Third-party tracking pixels said otherwise.</p>
+        <p>That ruling established a replicable formula. Plaintiffs' attorneys are using it in demand letters and class actions across every industry. The evidence they rely on comes from a HAR file. You can run one yourself.</p>
+        <p>The HARstack reads your HAR file, identifies what is firing on your site, and tells you exactly where the gaps between your data flows and your disclosures are. No account. No data transmission. Runs entirely in your browser.</p>
+      </div>
+    </div>
+    <div class="lede-secondary">
+      <div class="stat-block">
+        <span class="stat-num">235%</span>
+        <div class="stat-label">Increase in ECPA tracking-tech lawsuit filings in 2025, with another 60% year-over-year increase projected for 2026</div>
+        <span class="stat-cite">Source: Troutman Pepper Locke, April 2026</span>
+      </div>
+      <div class="lede-cta-group">
+        <a href="/tool/" class="btn-primary">Run in Browser</a>
+        <a href="https://github.com/pbarnhart/harstack/releases/latest/download/harstack.html" class="btn-secondary">Download HTML File</a>
+        <a href="https://github.com/pbarnhart/harstack" class="btn-secondary">View Source on GitHub</a>
+        <div class="btn-note">Run directly in your browser, or download the single HTML file and open it locally. No install. No account.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pullquote">
+    <div class="pullquote-text">"The plaintiffs do not need to prove harm. They need to find a gap between your privacy policy and your actual data flows."</div>
+    <div class="pullquote-attr">Phil Barnhart, CIPP/US &mdash; Pixel and Policy</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">What It Detects</div>
+    <div class="section-headline">200+ tracker signatures with specific regulatory framing</div>
+    <p style="font-family:var(--sans);font-size:14px;color:#444;font-weight:300;line-height:1.75;max-width:680px;">Every finding includes a plain-language description of what the technology does, which regulations apply, and what a policy disclosure gap looks like in practice. Not general privacy law. Specific citations to the cases and enforcement actions being used in active litigation.</p>
+    <div class="finding-grid">
+      <div class="finding-card">
+        <div class="finding-type">Session Replay</div>
+        <div class="finding-title">Microsoft Clarity</div>
+        <div class="finding-body">Microsoft operates as an independent data controller, not a service provider. Its published terms reserve the right to create user profiles for advertising. That distinction changes who bears the ECPA exposure.</div>
+        <div class="finding-regs">
+          <span class="reg-chip re">ECPA</span>
+          <span class="reg-chip ri">CIPA</span>
+          <span class="reg-chip rc2">US State Privacy</span>
+        </div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-type">Advertising</div>
+        <div class="finding-title">Enhanced Conversions (Google)</div>
+        <div class="finding-body">Hashed PII (SHA-256 email, phone) transmitted to Google. The FTC BetterHelp consent order established that hashing does not satisfy deletion obligations when the recipient can re-identify the value.</div>
+        <div class="finding-regs">
+          <span class="reg-chip re">ECPA</span>
+          <span class="reg-chip rc2">US State Privacy</span>
+        </div>
+      </div>
+      <div class="finding-card warn">
+        <div class="finding-type">Consent Management</div>
+        <div class="finding-title">GPC Signal Verification</div>
+        <div class="finding-body">The tool checks whether Sec-GPC: 1 appears in actual request headers, not just in self-reported settings. A CMP that reports GPC compliance without the header is a documented CPPA enforcement concern.</div>
+        <div class="finding-regs">
+          <span class="reg-chip rc2">US State Privacy</span>
+          <span class="reg-chip rc2">CPPA</span>
+        </div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-type">CDP / Server-Side</div>
+        <div class="finding-title">RudderStack CNAME Detection</div>
+        <div class="finding-body">CNAME deployments are first-party from the browser's perspective. They share cookies with the parent domain and bypass third-party cookie restrictions. That changes the consent enforcement model.</div>
+        <div class="finding-regs">
+          <span class="reg-chip rc2">US State Privacy</span>
+        </div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-type">PII Scanning</div>
+        <div class="finding-title">POST Body Analysis</div>
+        <div class="finding-body">Scans outbound POST bodies for raw and hashed PII. Distinguishes first-party from third-party endpoints. Flags SHA-256 email transmitted to ad platforms with the BetterHelp citation.</div>
+        <div class="finding-regs">
+          <span class="reg-chip rc2">US State Privacy</span>
+          <span class="reg-chip re">ECPA</span>
+        </div>
+      </div>
+      <div class="finding-card ok">
+        <div class="finding-type">Financial Services</div>
+        <div class="finding-title">GLBA-Regulated Pages</div>
+        <div class="finding-body">Detects tracking on pages handling non-public personal information. Pages with session replay surfaced a Safeguards Rule exposure.</div>
+        <div class="finding-regs">
+          <span class="reg-chip rg">GLBA</span>
+          <span class="reg-chip rg">16 CFR § 313</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Outcome Classification</div>
+    <div class="section-headline">Three buckets. Help discover where to start.</div>
+    <div class="bucket-row">
+      <div class="bucket">
+        <div class="bucket-label">High Severity</div>
+        <div class="bucket-name escalate">Escalate</div>
+        <div class="bucket-body">Session replay on authenticated or financial pages. Advertising pixels with GPC non-compliance. GLBA or HIPAA-regulated contexts. Route to legal immediately.</div>
+      </div>
+      <div class="bucket">
+        <div class="bucket-label">Medium Severity</div>
+        <div class="bucket-name review">Needs Review</div>
+        <div class="bucket-body">Standard advertising and analytics configurations with policy disclosure gaps. CDP routing without consent propagation verification. Route to privacy and martech teams.</div>
+      </div>
+      <div class="bucket">
+        <div class="bucket-label">Low Severity</div>
+        <div class="bucket-name ok">Likely OK</div>
+        <div class="bucket-body">Infrastructure, tag management, and analytics with appropriate consent gating and accurate policy disclosure. Document and maintain.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="case-strip">
+  <div class="page">
+    <div class="case-strip-label">Legal Citations Built Into Every Finding</div>
+    <div class="case-items">
+      <div class="case-item">
+        <span class="case-cite">18 U.S.C. § 2511(2)(d)</span>
+        <div class="case-title">ECPA Crime-Tort Exception</div>
+        <div class="case-body">The one-party consent defense fails if interception serves a criminal or tortious purpose. The August 2025 ECPA Privacy Policy Order made privacy policy misrepresentation a sufficient predicate.</div>
+      </div>
+      <div class="case-item">
+        <span class="case-cite">FTC File No. 2023-169, Docket C-4796</span>
+        <div class="case-title">BetterHelp Consent Order</div>
+        <div class="case-body">Hashing does not satisfy data deletion obligations when the recipient already possesses the underlying value. Applies directly to Enhanced Conversions and Customer Match implementations.</div>
+      </div>
+      <div class="case-item">
+        <span class="case-cite">Cal. Pen. Code § 631(a)</span>
+        <div class="case-title">CIPA Wiretapping</div>
+        <div class="case-body">California courts have applied the phone wiretapping statute to real-time browser data interception. Session replay carries CIPA exposure in California regardless of downstream data use.</div>
+      </div>
+      <div class="case-item">
+        <span class="case-cite">16 CFR § 313.3(o)</span>
+        <div class="case-title">GLBA Non-Public Personal Information</div>
+        <div class="case-body">NPI includes payee names, transaction amounts, and account data. Session replay on banking or financial services pages captures this by default and may not satisfy the Safeguards Rule.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="section">
+    <div class="section-label">How It Works</div>
+    <div class="section-headline">A HAR file is your tracking stack in motion</div>
+    <p style="font-family:var(--sans);font-size:14px;color:#444;font-weight:300;line-height:1.75;max-width:700px;margin-bottom:24px;">Open your browser's developer tools, record a page load, export the HAR. Drop it in the tool. The analysis runs in your browser. Nothing leaves your machine.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0;border:1px solid var(--rule);">
+      <div style="padding:20px;border-right:1px solid var(--rule-light);">
+        <div style="font-family:var(--mono);font-size:28px;color:var(--accent);font-weight:600;margin-bottom:8px;">01</div>
+        <div style="font-family:var(--serif);font-size:14px;font-weight:700;margin-bottom:6px;">Record</div>
+        <div style="font-family:var(--sans);font-size:12px;color:#555;font-weight:300;line-height:1.6;">Open DevTools, go to Network tab, load your page, export HAR. Chrome, Firefox, or Edge all work.</div>
+      </div>
+      <div style="padding:20px;border-right:1px solid var(--rule-light);">
+        <div style="font-family:var(--mono);font-size:28px;color:var(--accent);font-weight:600;margin-bottom:8px;">02</div>
+        <div style="font-family:var(--serif);font-size:14px;font-weight:700;margin-bottom:6px;">Upload</div>
+        <div style="font-family:var(--sans);font-size:12px;color:#555;font-weight:300;line-height:1.6;">Drop the HAR file into the tool. Answer two context questions: did you accept cookies, and do you use GPC.</div>
+      </div>
+      <div style="padding:20px;border-right:1px solid var(--rule-light);">
+        <div style="font-family:var(--mono);font-size:28px;color:var(--accent);font-weight:600;margin-bottom:8px;">03</div>
+        <div style="font-family:var(--serif);font-size:14px;font-weight:700;margin-bottom:6px;">Review</div>
+        <div style="font-family:var(--sans);font-size:12px;color:#555;font-weight:300;line-height:1.6;">Read findings with severity, confidence level, owner routing, and specific legal citations.</div>
+      </div>
+      <div style="padding:20px;">
+        <div style="font-family:var(--mono);font-size:28px;color:var(--accent);font-weight:600;margin-bottom:8px;">04</div>
+        <div style="font-family:var(--serif);font-size:14px;font-weight:700;margin-bottom:6px;">Export</div>
+        <div style="font-family:var(--sans);font-size:12px;color:#555;font-weight:300;line-height:1.6;">Download sanitized HAR and structured JSON. Share with outside counsel or security teams without raw PII.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="about-strip">
+    <div class="about-monogram">PB</div>
+    <div>
+      <div class="about-label">Built By</div>
+      <div class="about-name">Phil Barnhart</div>
+      <div class="about-body">I'm both a web marketer and web developer, and been building and auditing martech stacks for decades. Working both sides of the fence, I've had to keep up with both the compliance and technology challenges today's marketing efforts require. A lot of the privacy compliance issues I've run into over the years were the result of a stack that nobody had examined end to end, with a privacy policy written at a different point in time, with no systematic process for checking whether the two still matched. Long ago, I discovered using HAR files to troubleshoot problems in development environments and in web code standard audit tools couldn't reach easily. I built this tool to make it easier and safer for others to use HAR analysis for compliance troubleshooting. It is free and open source because the problem it solves is not a competitive advantage. It is a baseline.</div>
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--rule-light);display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+        <div style="font-family:var(--sans);font-size:13px;color:#555;font-weight:300;flex:1;min-width:200px;">HARstack surfaces the issues. Remediating them is a different conversation. If you need help interpreting findings, closing policy disclosure gaps, or building a remediation plan, reach out.</div>
+        <a href="https://pixelsandpolicy.substack.com" style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid var(--rule);padding:9px 16px;white-space:nowrap;">Pixel and Policy</a>
+        <a href="https://linkedin.com/in/pbarnhart" style="font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid var(--rule);padding:9px 16px;white-space:nowrap;">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:0 0 52px;">
+    <a href="/tool/" class="btn-primary" style="font-size:12px;padding:16px 20px;">Run in Browser</a>
+    <a href="https://github.com/pbarnhart/harstack/releases/latest/download/harstack.html" class="btn-secondary" style="font-size:12px;padding:15px 20px;">Download HTML</a>
+    <a href="https://pixelsandpolicy.substack.com" class="btn-secondary" style="font-size:12px;padding:15px 20px;">Pixel and Policy</a>
+  </div>
+
+  <div style="border:1px solid var(--rule);border-left:3px solid var(--gold);padding:28px 28px;margin:0 0 52px;background:var(--gold-light);">
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;">Infrastructure Transparency</div>
+    <div style="font-family:var(--sans);font-size:13.5px;line-height:1.8;color:#444;font-weight:300;">
+      <p>This page is served through Cloudflare. Cloudflare receives connection metadata for each request -- including IP addresses, timestamps, and request paths -- as part of normal CDN operation. You can review Cloudflare's privacy policy at <a href="https://www.cloudflare.com/privacypolicy/" style="color:var(--gold);">cloudflare.com/privacypolicy</a>.</p>
+      <p style="margin-top:12px;">The tool itself downloads directly from GitHub. GitHub (Microsoft) receives the download request. You can review GitHub's privacy statement at <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" style="color:var(--gold);">docs.github.com</a>. Once downloaded, the tool runs entirely in your browser. No data leaves your machine during analysis.</p>
+      <p style="margin-top:12px;">This page loads no advertising pixels, no analytics platform, and no session replay tools. The only third-party request is Google Fonts for typography. You can verify this yourself: download the tool, record a HAR on this page, and drop it in. The findings should come back Likely OK.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="page">
+    <div class="footer-brand">Pixel and Policy</div>
+    <div class="footer-tag">Martech, Privacy, and Risky Stacks</div>
+    <div class="footer-links">
+      <a href="/tool/">Run the Tool</a>
+      <a href="/captures/">Capture Guide</a>
+      <a href="https://github.com/pbarnhart/harstack">GitHub</a>
+      <a href="https://pixelsandpolicy.substack.com">Substack</a>
+      <a href="https://linkedin.com/in/pbarnhart">LinkedIn</a>
+      <a href="https://github.com/pbarnhart/harstack/blob/main/LICENSE">MIT License</a>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:#bbb;margin-top:20px;letter-spacing:0.08em;">This tool is a first-pass screening instrument. It does not determine legal compliance and does not replace qualified privacy counsel. This page is served via Cloudflare. Downloads are served directly from GitHub.</div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Blue background -->
+  <rect width="32" height="32" rx="6" fill="#3a7fbf"/>
+  <!-- Center node (first party) -->
+  <circle cx="16" cy="16" r="3.5" fill="white"/>
+  <!-- Inner ring -->
+  <circle cx="16" cy="16" r="9" fill="none" stroke="white" stroke-width="0.9" stroke-dasharray="2.2,2.2" opacity="0.7"/>
+  <!-- Outer ring -->
+  <circle cx="16" cy="16" r="14" fill="none" stroke="white" stroke-width="0.7" stroke-dasharray="1.8,2.8" opacity="0.4"/>
+  <!-- 6 satellite dots on inner ring -->
+  <circle cx="16" cy="7" r="1.8" fill="white" opacity="0.95"/>
+  <circle cx="23.8" cy="11.5" r="1.8" fill="white" opacity="0.95"/>
+  <circle cx="23.8" cy="20.5" r="1.8" fill="white" opacity="0.95"/>
+  <circle cx="16" cy="25" r="1.8" fill="white" opacity="0.95"/>
+  <circle cx="8.2" cy="20.5" r="1.8" fill="white" opacity="0.95"/>
+  <circle cx="8.2" cy="11.5" r="1.8" fill="white" opacity="0.95"/>
+  <!-- Connector lines from center to satellites -->
+  <line x1="16" y1="16" x2="16" y2="7" stroke="white" stroke-width="0.7" opacity="0.35"/>
+  <line x1="16" y1="16" x2="23.8" y2="11.5" stroke="white" stroke-width="0.7" opacity="0.35"/>
+  <line x1="16" y1="16" x2="23.8" y2="20.5" stroke="white" stroke-width="0.7" opacity="0.35"/>
+  <line x1="16" y1="16" x2="16" y2="25" stroke="white" stroke-width="0.7" opacity="0.35"/>
+  <line x1="16" y1="16" x2="8.2" y2="20.5" stroke="white" stroke-width="0.7" opacity="0.35"/>
+  <line x1="16" y1="16" x2="8.2" y2="11.5" stroke="white" stroke-width="0.7" opacity="0.35"/>
+</svg>
