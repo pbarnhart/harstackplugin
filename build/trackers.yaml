@@ -4428,3 +4428,55 @@ trackers:
     action: >-
       Identify which embedded component loads it (widget, Cast, app banner). Cover Google
       infrastructure in your privacy policy's third-party services disclosure.
+
+  - pattern: "oscilar.com"
+    name: "Oscilar (Risk Decisioning)"
+    category: "Fraud Prevention"
+    cc: t
+    risk: medium
+    regs:
+      - GLBA
+      - US State Privacy
+    description: >-
+      Oscilar AI risk and fraud decisioning (zqp.oscilar.com device-intelligence beacons). Collects
+      device and behavioral signals to score onboarding, credit, and transaction risk. Fraud
+      prevention is a legitimate purpose, but the mechanism is device fingerprinting, and in
+      financial contexts the signals feed decisions adjacent to GLBA-covered activity. Repeated
+      beacon traffic means collection is continuous, not one-time.
+    action: >-
+      Confirm the Oscilar relationship is service-provider scope under DPA and that fraud-prevention
+      data collection is disclosed in your privacy policy. Verify the collection is limited to pages
+      where risk decisions occur, and review fingerprinting disclosure language with counsel: CIPA
+      plaintiffs have targeted undisclosed device fingerprinting.
+
+  - pattern: "localizely.com"
+    name: "Localizely (Translations)"
+    category: "Content Delivery"
+    cc: t
+    risk: ok
+    regs: []
+    description: >-
+      Localizely over-the-air translation delivery (ota.localizely.com, cdn.localizely.com). Serves
+      localized UI strings; receives IP, User-Agent, and an SDK/project identifier. Content
+      infrastructure rather than tracking.
+    action: >-
+      No suppression action expected. Cover localization delivery under your privacy policy's
+      infrastructure or subprocessor disclosure.
+
+  - pattern: "firebaseinstallations.googleapis.com"
+    name: "Firebase Installations (Google)"
+    category: "Backend Infrastructure"
+    cc: t
+    risk: low
+    regs:
+      - US State Privacy
+    description: >-
+      Google Firebase Installations API (firebaseinstallations.googleapis.com). Issues and refreshes
+      a Firebase Installation ID (FID), a per-app-instance identifier used by Firebase services
+      (Analytics, Remote Config, Messaging) on this site. The FID is app-scoped rather than
+      cross-site, but it is a persistent identifier: which Firebase services consume it determines
+      whether this is infrastructure or analytics.
+    action: >-
+      Identify which Firebase services are active (Analytics implies measurement tied to the FID).
+      Disclose Firebase use in your privacy policy and confirm Google Analytics for Firebase, if
+      enabled, is gated behind analytics consent.

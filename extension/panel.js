@@ -517,7 +517,10 @@ function toggleMenu(force) {
 document.addEventListener("click", function (ev) {
   const id = ev.target && ev.target.id;
   if (id === "btnAnalyze") analyze();
-  else if (id === "btnReload") { state.entries = []; api.devtools.inspectedWindow.reload({}); setCaptureState("recording", 0); }
+  // ignoreCache matters: a consent platform served from browser cache never
+  // appears in the capture, which blinds load-order analysis (the
+  // cookie_only finding). A cache-bypassing reload shows the full stack.
+  else if (id === "btnReload") { state.entries = []; api.devtools.inspectedWindow.reload({ ignoreCache: true }); setCaptureState("recording", 0); }
   else if (id === "btnHar" && state.lastHar) download("harstack-capture.har", JSON.stringify(state.lastHar, null, 2), "application/json");
   else if (id === "btnJson" && state.lastJson) download("harstack-analysis.json", JSON.stringify(state.lastJson, null, 2), "application/json");
   else if (id === "btnCsv" && state.lastAnalysis) download("harstack-report.csv", toCSV(analysisToCsvRows(state.lastAnalysis)), "text/csv");

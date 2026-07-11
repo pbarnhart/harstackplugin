@@ -39,7 +39,7 @@ Plaintiffs' attorneys build these cases from HAR files. This tool lets you run t
 
 1. Download `harstack.html` from [Releases](https://github.com/pbarnhart/harstackplugin/releases)
 2. Open it in Chrome or Firefox (no install required)
-3. Record a HAR file from your site using browser DevTools (Network tab, export HAR)
+3. Record a HAR file from your site using browser DevTools (Network tab, export HAR). Use a private window and check **Disable cache** before loading the page: cached scripts, consent platforms especially, never appear in the capture otherwise
 4. Drop the HAR file into the tool
 5. Answer two context questions (consent state, GPC usage)
 6. Review findings and export the analysis JSON or sanitized HAR
@@ -60,7 +60,7 @@ Findings include citations to specific regulations and enforcement actions:
 
 ## Tracker Registry
 
-The tool includes 275 URL signature entries across:
+The tool includes 278 URL signature entries across:
 
 - Advertising (Meta, Google, TikTok, Reddit, Microsoft, DoubleClick)
 - Session Replay (Clarity, Hotjar, FullStory, LogRocket, Mouseflow)
@@ -163,7 +163,7 @@ Open DevTools, select the **HARstack** panel, browse, press **Analyze**.
 ```
 build/
   build.py            # single build script -> classic, wizard, extension engine
-  trackers.yaml       # authoritative tracker registry (275 entries)
+  trackers.yaml       # authoritative tracker registry (278 entries)
   citations.json      # regulatory citation map
   source/             # harstack-source.html (the engine + UI source)
   wizard-body.html    # wizard wrapper template

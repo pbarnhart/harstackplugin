@@ -18,7 +18,7 @@
     </div>
     <div class="controls">
       <span id="captureState" class="capture-state idle">&#9679; Idle</span>
-      <button id="btnReload" class="btn" title="Reload the page and capture from the first request">Reload &amp; Capture</button>
+      <button id="btnReload" class="btn" title="Reload the page with the cache bypassed and capture from the first request. Cached scripts (consent platforms especially) are invisible to a normal capture.">Reload &amp; Capture</button>
       <button id="btnAnalyze" class="btn btn-primary">Analyze</button>
       <span class="sep"></span>
       <button id="btnHar" class="btn btn-ghost" disabled title="Download the captured HAR">HAR</button>
@@ -54,9 +54,11 @@
     <div class="empty" id="empty">
       <h1>Audit your stack</h1>
       <p>Browse the page you want to audit with this panel open, then press <strong>Analyze</strong>.
-         For a complete capture from the first request, press <strong>Reload &amp; Capture</strong>.</p>
-      <p>For a first-visit audit, use a private or incognito window and stay logged out.
-         An authenticated session mixes your own account traffic into the capture.</p>
+         For a complete capture, press <strong>Reload &amp; Capture</strong>: it reloads with the
+         cache bypassed, so consent platforms and tag scripts appear in the capture instead of
+         loading silently from disk.</p>
+      <p>For a first-visit audit, use a private or incognito window (fresh cache, fresh cookies)
+         and stay logged out. An authenticated session mixes your own account traffic into the capture.</p>
       <p class="fineprint">Requests are read through the DevTools network API. Nothing leaves this browser.
          No permissions, no background listeners, no remote calls.</p>
     </div>
