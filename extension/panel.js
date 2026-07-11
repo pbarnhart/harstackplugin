@@ -17,6 +17,7 @@
    ============================================================ */
 
 const api = (typeof browser !== "undefined") ? browser : chrome;
+const IS_FIREFOX = (typeof browser !== "undefined");
 
 const GITHUB_REPO = "https://github.com/pbarnhart/harstackplugin";
 
@@ -472,6 +473,43 @@ function analysisToCsvRows(a) {
   return rows;
 }
 
+/* ---------- print ---------- */
+
+/* Chrome prints the panel document directly. Firefox silently ignores
+   window.print() inside a DevTools panel, so there the report is opened in
+   a regular tab and printed from the panel via w.print() -- extension-page
+   CSP forbids inline scripts, so the new tab cannot auto-print itself.
+   If the popup is blocked, the standalone report downloads instead. */
+async function printReport() {
+  if (!IS_FIREFOX) { window.print(); return; }
+
+  let css = "";
+  try { css = await (await fetch("report.css")).text(); } catch (e) {}
+  const site = state.lastSite || (state.lastAnalysis && state.lastAnalysis.firstPartyDomain) || "";
+  // Print is always the complete report: drop any active screen filters.
+  const reportHtml = document.getElementById("report").innerHTML
+    .replace(/(class="[^"]*)\bfiltered-out\b([^"]*")/g, "$1$2");
+  const doc = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
+    '<title>HARstack Privacy Stack Audit Report' + (site ? " · " + escapeHtml(site) : "") + '</title>' +
+    '<style>\n' + css + '\n</style></head><body>' +
+    '<div id="app"><main id="report" class="report">' + reportHtml + '</main></div>' +
+    '</body></html>';
+
+  let w = null;
+  try { w = window.open("", "_blank"); } catch (e) {}
+  if (w && w.document) {
+    try {
+      w.document.open();
+      w.document.write(doc);
+      w.document.close();
+      setTimeout(function () { try { w.focus(); w.print(); } catch (e) {} }, 400);
+      return;
+    } catch (e) {}
+  }
+  download("harstack-report.html", doc, "text/html");
+  flashButton("btnPrint", "⤓ Saved: open it, then print");
+}
+
 /* ---------- bug reporting ---------- */
 
 function diagnosticsText() {
@@ -528,7 +566,7 @@ document.addEventListener("click", function (ev) {
     const prompt = window.HARStackEngine.buildPrompt ? window.HARStackEngine.buildPrompt(state.lastSite) : "";
     if (prompt) copyText(prompt, "btnPrompt", "harstack-ai-prompt.txt");
   }
-  else if (id === "btnPrint") window.print();
+  else if (id === "btnPrint") printReport();
   else if (id === "btnMenu") { ev.stopPropagation(); toggleMenu(); }
   else if (id === "btnDiag") { copyText(diagnosticsText(), "btnDiag"); }
   else if (ev.target && ev.target.classList && ev.target.classList.contains("chip")) {

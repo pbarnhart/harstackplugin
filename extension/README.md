@@ -166,6 +166,10 @@ all work against the analysis object your `buildAnalysisJSON` already produces.
 - **Search and severity filters.** Keyword filter (`/` to focus) and
   High / Medium / Low / Info chips. Filters affect the screen only; Print / PDF
   always renders the complete report.
+- **Print on Firefox.** Firefox ignores `window.print()` inside a DevTools
+  panel, so there Print / PDF opens the report in a regular tab and prints
+  from that tab (or downloads `harstack-report.html` if the popup is
+  blocked). Chrome prints the panel directly.
 - **Dark mode.** Follows the DevTools theme. Print is always light.
 - **Report menu.** Report a bug or request a tracker (GitHub issue templates),
   and Copy diagnostics: version, browser, and result counts only. No URLs,
