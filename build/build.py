@@ -8,6 +8,8 @@ Usage (from the build/ directory):
 Outputs:
     ../harstack.html       Classic two-pane tool  (universal regulatory fixes)
     ../tool/index.html     Wizard variant          (universal + wizard additions)
+    ../extension/engine.js Headless engine for the browser extension
+    ../plugin/index.html   Extension landing page, published from extension/site/
 """
 from pathlib import Path
 import json
@@ -19,6 +21,8 @@ SRC_PATH    = BUILD_DIR / "source" / "harstack-source.html"
 CLASSIC_OUT = (BUILD_DIR / ".." / "harstack.html").resolve()
 WIZARD_OUT  = (BUILD_DIR / ".." / "tool" / "index.html").resolve()
 EXTENSION_OUT = (BUILD_DIR / ".." / "extension" / "engine.js").resolve()
+PLUGIN_SRC  = (BUILD_DIR / ".." / "extension" / "site" / "index.html").resolve()
+PLUGIN_OUT  = (BUILD_DIR / ".." / "plugin" / "index.html").resolve()
 
 # ── Tracker DB from YAML ─────────────────────────────────────────────────────
 def _js_esc(s: str) -> str:
@@ -197,6 +201,21 @@ def write_extension_engine(script_block_with_tags: str) -> None:
     EXTENSION_OUT.parent.mkdir(parents=True, exist_ok=True)
     EXTENSION_OUT.write_text(out, encoding="utf-8")
     print(f"EXTENSION: wrote {len(out):,} chars to {EXTENSION_OUT}")
+
+# ============================================================
+# PLUGIN LANDING PAGE
+# Publishes extension/site/index.html (the extension's marketing page,
+# hand-maintained, not templated from harstack-source.html) to /plugin/
+# so GitHub Pages can serve it at harstack.com/plugin/. This is a plain
+# copy, not a build from source -- it keeps the raw extension/ folder
+# (engine.js, panel.js, manifests, tests) out of the served path.
+# ============================================================
+
+def publish_plugin_page() -> None:
+    html = PLUGIN_SRC.read_text(encoding="utf-8")
+    PLUGIN_OUT.parent.mkdir(parents=True, exist_ok=True)
+    PLUGIN_OUT.write_text(html, encoding="utf-8")
+    print(f"PLUGIN: wrote {len(html):,} chars to {PLUGIN_OUT}")
 
 SRC = SRC_PATH.read_text(encoding="utf-8")
 assert "// INJECT:TRACKERS" in SRC, "INJECT:TRACKERS placeholder missing from source"
@@ -1359,3 +1378,5 @@ def sanity_check_both_outputs(classic_path, wizard_path):
 
 
 sanity_check_both_outputs(CLASSIC_OUT, WIZARD_OUT)
+
+publish_plugin_page()

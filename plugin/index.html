@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HARstack Extension — Audit From the Network Panel. Local Only.</title>
+<meta name="description" content="The HARstack browser extension audits a page's privacy and martech stack from its own network traffic. DevTools panel. No host permissions, no background tracking, nothing leaves your browser. Chrome and Firefox.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a2030;
+  --paper: #ffffff;
+  --paper-dark: #f0f4f8;
+  --paper-mid: #f7f9fb;
+  --rule: #c8d4e0;
+  --rule-light: #e2eaf2;
+  --accent: #b83228;
+  --accent-dark: #8c1f17;
+  --accent-light: #fdf0ee;
+  --gold: #8c6d1f;
+  --gold-light: #f9f3e6;
+  --green: #2f6b3a;
+  --mono: 'IBM Plex Mono', monospace;
+  --serif: 'Libre Baskerville', Georgia, serif;
+  --sans: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper); line-height: 1.6; font-weight: 300; }
+a { color: inherit; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+/* dateline / nav */
+.dateline { border-bottom: 2px solid var(--ink); }
+.dateline-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+.dateline-brand { font-family: var(--serif); font-style: italic; font-size: 19px; }
+.dateline-brand b { font-style: normal; color: var(--accent); }
+.dateline-link { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; text-decoration: none; border: 1px solid var(--rule); padding: 9px 14px; }
+.dateline-link:hover { border-color: var(--ink); }
+
+/* hero */
+.hero { padding: 64px 0 48px; border-bottom: 1px solid var(--rule-light); }
+.kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
+.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(30px, 5vw, 50px); line-height: 1.08; max-width: 16em; }
+.hero p.sub { font-size: 18px; max-width: 32em; margin-top: 22px; color: #41506a; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+.btn-primary, .btn-secondary { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; padding: 14px 18px; border: 1px solid var(--ink); }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+.btn-secondary { color: var(--ink); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+/* permission banner */
+.perm { margin: 40px 0; border: 1px solid var(--green); border-left-width: 4px; background: #f3f8f4; padding: 22px 26px; }
+.perm .lab { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+.perm h2 { font-family: var(--serif); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.perm code { font-family: var(--mono); font-size: 13px; background: #e4efe7; padding: 1px 6px; }
+
+/* sections */
+.section { padding: 46px 0; border-bottom: 1px solid var(--rule-light); }
+.section-label { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.section-headline { font-family: var(--serif); font-size: clamp(22px, 3vw, 30px); font-weight: 700; line-height: 1.18; max-width: 18em; margin-bottom: 24px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+@media (max-width: 720px){ .grid { grid-template-columns: 1fr; } }
+.card { border: 1px solid var(--rule); padding: 22px 24px; }
+.card h3 { font-family: var(--serif); font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.card .meta { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #6b7890; margin-bottom: 12px; }
+.card p { font-size: 15px; color: #41506a; }
+
+/* install steps */
+.steps { counter-reset: s; }
+.step { display: flex; gap: 18px; padding: 18px 0; border-bottom: 1px dashed var(--rule-light); }
+.step:before { counter-increment: s; content: counter(s); font-family: var(--mono); font-weight: 600; color: var(--accent); border: 1px solid var(--rule); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex: 0 0 34px; }
+.step div p { font-size: 15px; color: #41506a; }
+.step code, pre.code { font-family: var(--mono); font-size: 13px; }
+pre.code { background: var(--ink); color: #e9eef6; padding: 16px 18px; overflow-x: auto; margin-top: 10px; font-size: 12.5px; line-height: 1.7; }
+.tabs { display: flex; gap: 8px; margin-bottom: 22px; }
+.tab { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 9px 16px; border: 1px solid var(--rule); cursor: pointer; background: var(--paper); }
+.tab.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.panel { display: none; } .panel.active { display: block; }
+
+/* footer */
+footer { background: var(--ink); color: #c8d4e0; padding: 44px 0; margin-top: 8px; }
+.footer-brand { font-family: var(--serif); font-style: italic; font-size: 20px; color: var(--paper); }
+.footer-tag { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; margin: 6px 0 18px; }
+.footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
+.footer-links a { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; color: #c8d4e0; }
+.footer-links a:hover { color: var(--paper); }
+.note { font-size: 13px; color: #41506a; margin-top: 14px; }
+.note strong { font-weight: 500; color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="dateline"><div class="wrap dateline-inner">
+  <div class="dateline-brand">HAR<b>stack</b> · Extension</div>
+  <a href="/" class="dateline-link">← Main Site</a>
+</div></div>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="kicker">Browser Extension · Chrome &amp; Firefox</div>
+    <h1>Audit the stack from the network panel. Nothing leaves the browser.</h1>
+    <p class="sub">Same engine as the HARstack tool. Now it reads the live page instead of an uploaded HAR. It runs in the DevTools panel, asks for zero permissions, and sends nothing anywhere.</p>
+    <div class="cta">
+      <a href="https://github.com/pbarnhart/harstackplugin/releases/latest" class="btn-primary">Get the Extension</a>
+      <a href="#install" class="btn-secondary">Install Guide</a>
+      <a href="/tool/" class="btn-secondary">Use the HAR Tool Instead</a>
+    </div>
+  </section>
+
+  <div class="perm">
+    <div class="lab">Permission Footprint</div>
+    <h2>Permissions requested at install: none.</h2>
+    <p>The permission list is empty. No host permissions. No <code>webRequest</code>. No <code>debugger</code>, so Chrome shows no "started debugging this browser" banner. No background worker watching you browse. Network data comes from the DevTools panel, and response bodies through <code>getContent()</code>, which needs no extra grant on either browser. A privacy auditor that asks for nothing is the only kind that can make its own case without flinching.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Why a Panel, Not a Background Extension</div>
+    <div class="section-headline">The design that keeps the permission list near empty</div>
+    <div class="grid">
+      <div class="card"><div class="meta">Capture</div><h3>DevTools network API</h3><p>The panel reads the inspected tab's requests directly. No host permissions, because it never injects into pages or intercepts traffic in the background.</p></div>
+      <div class="card"><div class="meta">Response bodies</div><h3>Body fingerprinting intact</h3><p>CNAME and tag-injected vendors that URL matching misses still get caught. Bodies come through <code>getContent()</code> on Chrome and Firefox alike, with no debugger banner.</p></div>
+      <div class="card"><div class="meta">Same brain</div><h3>The full HARstack engine</h3><p>336 tracker signatures, CDP payload inspection, session-replay and CIPA framing, GPC verification from <code>Sec-GPC</code> headers, a consent timeline with per-tracker timestamps, loaded-by attribution, and the send-to routing. Generated from the same source as the tool.</p></div>
+      <div class="card"><div class="meta">Output</div><h3>Report, JSON, CSV, HAR, AI prompt</h3><p>Findings render expanded for clean printing. Export a sanitized HAR, the analysis JSON, a CSV that opens as real rows, or the disclosure-gap AI prompt: paste the site's privacy policy into it and ask your own AI whether the policy matches the pixels. Print to a counsel-ready PDF.</p></div>
+    </div>
+  </div>
+
+  <div class="section" id="install">
+    <div class="section-label">Install</div>
+    <div class="section-headline">Load it in two minutes. No store account required.</div>
+    <div class="tabs">
+      <div class="tab active" data-tab="chrome">Chrome / Edge</div>
+      <div class="tab" data-tab="firefox">Firefox</div>
+    </div>
+
+    <div class="panel active" data-panel="chrome">
+      <div class="steps">
+        <div class="step"><div><p>Download and unzip the release, then set the active manifest.</p><pre class="code">cp manifest.chrome.json manifest.json</pre></div></div>
+        <div class="step"><div><p>Open <code>chrome://extensions</code> and turn on Developer mode.</p></div></div>
+        <div class="step"><div><p>Click Load unpacked and select the <code>extension</code> folder. It persists across restarts.</p></div></div>
+        <div class="step"><div><p>Open any page, open DevTools (F12), select the <strong>HARstack</strong> panel, browse, and press Analyze.</p></div></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="firefox">
+      <div class="steps">
+        <div class="step"><div><p>Set the active manifest.</p><pre class="code">cp manifest.firefox.json manifest.json</pre></div></div>
+        <div class="step"><div><p>Open <code>about:debugging#/runtime/this-firefox</code>.</p></div></div>
+        <div class="step"><div><p>Click Load Temporary Add-on and pick <code>manifest.json</code>. For a permanent install, use a signed build (see the release notes).</p></div></div>
+        <div class="step"><div><p>Open any page, open DevTools (F12), select the <strong>HARstack</strong> panel, browse, and press Analyze.</p></div></div>
+      </div>
+    </div>
+    <p class="note"><strong>Note:</strong> the panel captures requests made after DevTools is open. Use <strong>Reload &amp; Capture</strong> to get everything from the first request.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Extension or HAR Tool</div>
+    <div class="section-headline">Keep both. They feed the same engine.</div>
+    <div class="grid">
+      <div class="card"><div class="meta">Extension</div><h3>Live, on your own properties</h3><p>Continuous capture across a session, GPC you can toggle, no upload step. Best for auditing sites you control and browse yourself.</p></div>
+      <div class="card"><div class="meta">HAR tool</div><h3>Evidence, from anywhere</h3><p>A frozen, hashable artifact anyone can produce, from a machine or browser you do not control. Best for producing an exhibit. <a href="/tool/" style="color:var(--accent);">Open the tool →</a></p></div>
+    </div>
+  </div>
+
+</div>
+
+<footer><div class="wrap">
+  <div class="footer-brand">Pixel and Policy</div>
+  <div class="footer-tag">Martech, Privacy, and Risky Stacks</div>
+  <div class="footer-links">
+    <a href="/">Main Site</a>
+    <a href="/tool/">Run the Tool</a>
+    <a href="https://pixelsandpolicy.substack.com">Substack</a>
+    <a href="https://linkedin.com/in/pbarnhart">LinkedIn</a>
+  </div>
+</div></footer>
+
+<script>
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('active');});
+    t.classList.add('active');
+    document.querySelector('.panel[data-panel="'+t.dataset.tab+'"]').classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

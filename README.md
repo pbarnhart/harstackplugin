@@ -135,14 +135,15 @@ cd build
 python build.py
 ```
 
-This regenerates four outputs from the single source:
+This regenerates the following outputs:
 
 | Output | Path |
 |--------|------|
 | Classic tool | `harstack.html` |
 | Wizard tool | `tool/index.html` |
 | Extension engine | `extension/engine.js` |
-| (site landing) | `extension/site/index.html` (static, not generated) |
+| Extension landing page (source, hand-maintained) | `extension/site/index.html` |
+| Extension landing page (published, copied from the source above) | `plugin/index.html` -> served at harstack.com/plugin/ |
 
 ### Load the extension
 

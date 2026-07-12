@@ -51,6 +51,7 @@ Phil Barnhart, CIPP/US. Principal Consultant at YourExitRamp LLC. Publisher of P
 ## Links
 
 - Tool: https://harstack.com/tool/
-- GitHub: https://github.com/pbarnhart/harstack
+- Browser extension: https://harstack.com/plugin/
+- GitHub: https://github.com/pbarnhart/harstackplugin
 - Newsletter: https://pixelsandpolicy.substack.com
-- Issues: https://github.com/pbarnhart/harstack/issues
+- Issues: https://github.com/pbarnhart/harstackplugin/issues
