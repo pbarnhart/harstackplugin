@@ -2323,29 +2323,48 @@ function parseCookies(entries, trackers) {
   // Build a domain -> tracker name index. The TR keys are URL substrings,
   // some of which are paths or query fragments rather than domains, so the
   // index uses the URL the tracker actually fired on, then strips to host.
+  //
+  // Multiple distinct vendors are frequently deployed under the same
+  // registrable root domain -- e.g. a performance-monitoring tool proxied
+  // first-party directly on the site's own root domain, alongside a
+  // referral/CDP vendor CNAME'd to a subdomain of that same root. A flat
+  // one-name-per-domain index (first tracker indexed wins) will then
+  // confidently attribute a root-level cookie to whichever vendor happened
+  // to be indexed first, which can name the wrong vendor outright. Track
+  // every vendor sharing a domain level in a Set, and only report a
+  // confident single owner when there is exactly one candidate.
   const domainIndex = new Map();
+  const addToIndex = (key, name) => {
+    if (!domainIndex.has(key)) domainIndex.set(key, new Set());
+    domainIndex.get(key).add(name);
+  };
   if (trackers) {
     trackers.forEach(t => {
       try {
         const h = new URL(t.url).hostname.replace(/^www\./,'');
         // Index both the full host and its registrable suffix (rough heuristic)
-        if (!domainIndex.has(h)) domainIndex.set(h, t.n);
+        addToIndex(h, t.n);
         const parts = h.split('.');
         if (parts.length > 2) {
           const root = parts.slice(-2).join('.');
-          if (!domainIndex.has(root)) domainIndex.set(root, t.n);
+          addToIndex(root, t.n);
         }
       } catch {}
     });
   }
+  const fromCandidates = (set) => {
+    if (!set || set.size === 0) return null;
+    if (set.size === 1) return [...set][0];
+    return `${[...set].join(' or ')} (shared domain -- cannot confirm which set this cookie)`;
+  };
   const resolveSetBy = (host) => {
     if (!host) return null;
     const h = host.replace(/^www\./,'').replace(/^\./,'');
-    if (domainIndex.has(h)) return domainIndex.get(h);
+    if (domainIndex.has(h)) return fromCandidates(domainIndex.get(h));
     const parts = h.split('.');
     for (let i = 1; i < parts.length - 1; i++) {
       const suffix = parts.slice(i).join('.');
-      if (domainIndex.has(suffix)) return domainIndex.get(suffix);
+      if (domainIndex.has(suffix)) return fromCandidates(domainIndex.get(suffix));
     }
     return null;
   };
