@@ -23,7 +23,7 @@ const GITHUB_REPO = "https://github.com/pbarnhart/harstackplugin";
 
 const state = {
   entries: [], lastHar: null, lastAnalysis: null, lastJson: null,
-  lastSite: "", filterQ: "", filterSev: new Set()
+  lastSite: "", filterQ: "", filterSev: new Set(), debugView: false
 };
 
 /* ---------- theme: follow DevTools ---------- */
@@ -154,7 +154,7 @@ async function analyze() {
   const har = {
     log: {
       version: "1.2",
-      creator: { name: "HARstack Extension (harstack.com)", version: "0.3.0", comment: attribution() },
+      creator: { name: "HARstack Extension (harstack.com)", version: "0.3.1", comment: attribution() },
       pages: [{ startedDateTime: new Date().toISOString(), id: "page_1", title: ctx.href || ctx.host || "", pageTimings: {} }],
       entries: filled
     }
@@ -176,6 +176,7 @@ async function analyze() {
   renderReport(result.analysis);
   enableExports(true);
   showToolbar(true);
+  applyDebugView();
   applyFilters();
   setCaptureState("recording", state.entries.length);
 }
@@ -203,10 +204,11 @@ function findingCard(f) {
   if (f.confidence) html += '<span class="tag conf">' + escapeHtml(f.confidence) + '</span>';
   html += '</div>';
   if (f.plain) html += '<p class="f-plain">' + escapeHtml(f.plain) + '</p>';
-  if (f.loadedBy) html += '<p class="f-line"><span class="lab">LOADED BY</span><span class="mono">' + escapeHtml(f.loadedBy) + '</span></p>';
+  if (f.loadedBy) html += '<p class="f-line f-loadedby"><span class="lab">LOADED BY</span><span class="mono">' + escapeHtml(f.loadedBy) + '</span></p>';
   const sendTo = Array.isArray(f.send_to) ? f.send_to.join(" · ") : (f.send_to || "");
-  if (sendTo) html += '<p class="f-line"><span class="lab">SEND TO</span>' + escapeHtml(sendTo) + '</p>';
-  if (f.action) html += '<p class="f-line"><span class="lab">RECOMMENDED ACTION</span>' + escapeHtml(f.action) + '</p>';
+  if (sendTo) html += '<p class="f-line f-sendto"><span class="lab">SEND TO</span>' + escapeHtml(sendTo) + '</p>';
+  if (f.action) html += '<p class="f-line f-action"><span class="lab">RECOMMENDED ACTION</span>' + escapeHtml(f.action) + '</p>';
+  if (f.status) html += '<p class="f-line f-status"><span class="lab">HTTP STATUS</span><span class="mono">' + escapeHtml(String(f.status)) + '</span></p>';
   html += '</article>';
   return html;
 }
@@ -393,6 +395,18 @@ function applyFilters() {
   if (fc) fc.textContent = (q || sevs.size) ? (visible + " of " + total + " shown") : "";
 }
 
+/* Engineer view: hides legal citations, confidence levels, and owner
+   routing (compliance-audience fields); keeps tracker name/category,
+   load order (consent timeline), first/third-party, and HTTP status,
+   which is what a dev debugging a tag deployment actually needs. Same
+   findings data, denser render -- no re-analysis. */
+function applyDebugView() {
+  const report = document.getElementById("report");
+  if (report) report.classList.toggle("debug-view", state.debugView);
+  const btn = document.getElementById("btnDebugView");
+  if (btn) btn.classList.toggle("on", state.debugView);
+}
+
 function clearFilters() {
   state.filterQ = "";
   state.filterSev.clear();
@@ -567,6 +581,7 @@ document.addEventListener("click", function (ev) {
     if (prompt) copyText(prompt, "btnPrompt", "harstack-ai-prompt.txt");
   }
   else if (id === "btnPrint") printReport();
+  else if (id === "btnDebugView") { state.debugView = !state.debugView; applyDebugView(); }
   else if (id === "btnMenu") { ev.stopPropagation(); toggleMenu(); }
   else if (id === "btnDiag") { copyText(diagnosticsText(), "btnDiag"); }
   else if (ev.target && ev.target.classList && ev.target.classList.contains("chip")) {

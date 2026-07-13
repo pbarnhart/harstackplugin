@@ -179,6 +179,9 @@ Every export carries the attribution stamp: report footer, analysis JSON
 (`_meta.generated_by`), CSV (`generated_by` row), HAR (`creator`), and the AI
 prompt block.
 
+v0.3.1 — engineer view toggle (hides legal citations, confidence levels, and
+owner routing; shows HTTP status per finding), CNAME-deployed CDP detection
+no longer guesses a vendor name from payload shape alone.
 v0.3.0 — zero permissions, consent timeline, loaded-by attribution, declared
 consent check, disclosure-gap AI prompt, filtering, dark mode, bug reporting.
 v0.2.0 — capture front end with the real HARstack engine wired in (generated

@@ -161,9 +161,19 @@ html, body {
 .f-plain { margin: 8px 0; }
 .f-line { margin: 6px 0; font-size: 13px; }
 .f-line .lab { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; color: var(--muted); display: block; }
+.f-status { color: var(--muted); }
 
 .scope { color: var(--muted); font-size: 12px; }
 .scope .sec-h { color: var(--ink); }
+
+/* Engineer view: same findings, compliance-audience fields (citations,
+   confidence, owner routing, outcome bucket) hidden. Load order lives in
+   the consent timeline table, which stays visible. */
+.report.debug-view .mast-right,
+.report.debug-view .why,
+.report.debug-view .f-tags,
+.report.debug-view .f-sendto,
+.report.debug-view .f-action { display: none; }
 
 .mono { font-family: var(--mono); font-size: 12px; }
 
@@ -248,6 +258,13 @@ html, body {
   .filtered-out { display: block !important; }
   tr.filtered-out { display: table-row !important; }
   section.filtered-out { display: block !important; }
+  /* Engineer view is a screen-only shortcut; the printed artifact is
+     always the complete compliance report. */
+  .debug-view .mast-right,
+  .debug-view .why,
+  .debug-view .f-sendto,
+  .debug-view .f-action { display: block !important; }
+  .debug-view .f-tags { display: flex !important; }
   #app { max-width: none; }
   .report { padding: 0; }
   .masthead { page-break-after: avoid; }

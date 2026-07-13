@@ -108,6 +108,14 @@ body {
   border-radius: 2px;
   letter-spacing: 0.14em;
 }
+.us-badge {
+  background: rgba(58,127,191,0.2);
+  border: 1px solid rgba(58,127,191,0.4);
+  color: #9cf;
+  padding: 2px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.14em;
+}
 
 /* LAYOUT */
 .page {
@@ -640,6 +648,8 @@ footer {
   <span class="dateline-item"><strong>Data Collected</strong> None</span>
   <a href="/captures/" class="dateline-link">Capture Guide</a>
   <a href="/plugin/" class="dateline-link">Browser Extension</a>
+  <a href="#what-is-a-har-file" class="dateline-link">What Is a HAR File?</a>
+  <span class="us-badge">US Version</span>
   <span class="mit-badge">MIT Open Source</span>
 </div>
 
@@ -709,7 +719,7 @@ footer {
       </div>
       <div class="finding-card">
         <div class="finding-type">CDP / Server-Side</div>
-        <div class="finding-title">RudderStack CNAME Detection</div>
+        <div class="finding-title">CNAME-Deployed CDP Detection</div>
         <div class="finding-body">CNAME deployments are first-party from the browser's perspective. They share cookies with the parent domain and bypass third-party cookie restrictions. That changes the consent enforcement model.</div>
         <div class="finding-regs">
           <span class="reg-chip rc2">US State Privacy</span>
@@ -790,9 +800,10 @@ footer {
 
 <div class="page">
 
-  <div class="section">
+  <div class="section" id="what-is-a-har-file">
     <div class="section-label">How It Works</div>
     <div class="section-headline">A HAR file is your tracking stack in motion</div>
+    <p style="font-family:var(--sans);font-size:14px;color:#444;font-weight:300;line-height:1.75;max-width:700px;margin-bottom:12px;">A HAR (HTTP Archive) file is a record of everything a browser sent and received while loading a page: every request URL, header, cookie, response body, and timestamp. It is a built-in export from Chrome, Firefox, and Edge DevTools, not a HARstack-specific format. Because it captures actual network traffic rather than declared configuration, it shows what a site's tracking stack does, not just what it is supposed to do.</p>
     <p style="font-family:var(--sans);font-size:14px;color:#444;font-weight:300;line-height:1.75;max-width:700px;margin-bottom:24px;">Open your browser's developer tools, record a page load, export the HAR. Drop it in the tool. The analysis runs in your browser. Nothing leaves your machine.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0;border:1px solid var(--rule);">
       <div style="padding:20px;border-right:1px solid var(--rule-light);">

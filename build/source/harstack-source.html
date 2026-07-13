@@ -1101,7 +1101,11 @@ function parseCDPEvents(entries) {
     const rawBody = entry.request?.postData?.text;
     if (rawBody) { try { payload = JSON.parse(rawBody); } catch {} }
 
-    // Fallback: CNAME-deployed Segment/RudderStack on a customer-owned domain.
+    // Fallback: a CNAME-deployed CDP on a customer-owned domain, identified by
+    // payload shape rather than vendor signature. The /v1/track-style path and
+    // userId/anonymousId/event fields are the "Segment protocol" shape, which
+    // many CDPs implement (Segment, RudderStack, and others) -- payload shape
+    // alone cannot tell them apart, so this stays vendor-unattributed.
     // Match path-shape AND payload-shape together to keep false positives down.
     if (!ep && payload) {
       const cnamePathMatch = /\/v1\/(page|track|identify|group|alias|batch|screen)(\?|$)/.test(url);
@@ -1113,7 +1117,7 @@ function parseCDPEvents(entries) {
         if (looksLikeCdp) {
           let host = '';
           try { host = new URL(url).hostname; } catch {}
-          ep = { pattern: 'cname', platform: `RudderStack/Segment (CNAME: ${host})`, type: 'Data Plane' };
+          ep = { pattern: 'cname', platform: `Unidentified CDP (CNAME: ${host})`, type: 'Data Plane' };
         }
       }
     }
@@ -2304,25 +2308,27 @@ function analyzeHAR(h, bizProfile, liveCtx) {
   });
 
 
-  // If parseCDPEvents detected a CNAME-deployed Segment/RudderStack data plane
-  // (POSTs to /v1/page, /v1/track, etc. on a customer-owned host with
-  // Segment/RudderStack-shape payloads), surface the host as a tracker entry.
-  // This guarantees the per-tracker finding renders and the CNAME host is
-  // documented in the audit even when the SDK signals were not captured.
+  // If parseCDPEvents detected a CNAME-deployed CDP data plane (POSTs to
+  // /v1/page, /v1/track, etc. on a customer-owned host with Segment-protocol-
+  // shape payloads), surface the host as a tracker entry. This guarantees the
+  // per-tracker finding renders and the CNAME host is documented in the audit
+  // even when the SDK signals were not captured. The vendor is not attributed
+  // -- payload shape alone cannot distinguish Segment from RudderStack from
+  // any other CDP implementing the same protocol.
   const cnameCdpHosts = new Set();
   cdpEvents.forEach(ev => {
-    if (typeof ev.platform === 'string' && ev.platform.startsWith('RudderStack/Segment (CNAME')) {
+    if (typeof ev.platform === 'string' && ev.platform.startsWith('Unidentified CDP (CNAME')) {
       try { cnameCdpHosts.add(new URL(ev.url).hostname.replace(/^www\./,'')); } catch {}
     }
   });
   cnameCdpHosts.forEach(host => {
-    const name = `RudderStack/Segment (CNAME Data Plane: ${host})`;
+    const name = `Unidentified CDP (CNAME Data Plane: ${host})`;
     if (trackers.has(name)) return;
     const sampleEvent = cdpEvents.find(ev => { try { return new URL(ev.url).hostname.endsWith(host); } catch { return false; } });
     trackers.set(name, {
       n: name, cat: 'CDP', cc: 'd', r: 'medium',
       regs: ['US State Privacy'],
-      d: `Customer-operated CNAME endpoint at ${host} receiving Segment/RudderStack-shape event payloads (POSTs to /v1/page, /v1/track, /v1/identify, or similar with userId/anonymousId/event/name fields). Identified by payload shape because the host sits on a customer-owned domain rather than the vendor's. CNAME deployments are first-party from the browser's perspective: they share cookies with the parent domain, bypass third-party cookie restrictions, and are typically excluded from CMP block-by-default lists. This is intentional infrastructure, not a violation in itself, but it changes the consent enforcement model. The destinations configured server-side inside the CDP receive forwarded events and are invisible to this HAR capture.`,
+      d: `Customer-operated CNAME endpoint at ${host} receiving Segment-protocol-shape event payloads (POSTs to /v1/page, /v1/track, /v1/identify, or similar with userId/anonymousId/event/name fields). Identified by payload shape because the host sits on a customer-owned domain rather than the vendor's; the specific CDP vendor (Segment, RudderStack, or another implementation of the same protocol) cannot be determined from payload shape alone. CNAME deployments are first-party from the browser's perspective: they share cookies with the parent domain, bypass third-party cookie restrictions, and are typically excluded from CMP block-by-default lists. This is intentional infrastructure, not a violation in itself, but it changes the consent enforcement model. The destinations configured server-side inside the CDP receive forwarded events and are invisible to this HAR capture.`,
       a: `Confirm the CNAME at ${host} is documented in your privacy policy as a first-party endpoint that forwards to third-party destinations. Audit the destination list configured in the CDP workspace. Verify that consent context (tracking_consent, marketing_consent, or equivalent fields in the payload) is read at the transformation or destination level before server-to-server forwarding occurs. Emitting consent in the event is not the same as enforcing it on egress.`,
       url: sampleEvent?.url || `https://${host}/`,
       order: sampleEvent?.idx ?? 9999,
