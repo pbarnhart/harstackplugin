@@ -5297,7 +5297,7 @@ document.addEventListener('keydown', e => {
     if (v === null || v === undefined) return '';
     if (typeof v === 'object') v = JSON.stringify(v);
     v = String(v);
-    if (/[",\\r\\n]/.test(v)) {
+    if (/[",\r\n]/.test(v)) {
       return '"' + v.replace(/"/g, '""') + '"';
     }
     return v;
@@ -5478,7 +5478,7 @@ document.addEventListener('keydown', e => {
     });
 
     // Excel-friendly BOM so column headers + accented characters render correctly
-    return '\\ufeff' + lines.join('\\r\\n') + '\\r\\n';
+    return '﻿' + lines.join('\r\n') + '\r\n';
   }
 
   function dlCSV() {
@@ -5599,9 +5599,9 @@ document.addEventListener('keydown', e => {
     if (!el) return;
     if (!csv) { el.textContent = '(Run the audit first.)'; return; }
     // Strip BOM, take first ~40 lines for preview
-    const text = csv.replace(/^\\ufeff/, '');
-    const head = text.split('\\r\\n').slice(0, 40).join('\\r\\n');
-    el.textContent = head + (text.split('\\r\\n').length > 40 ? '\\r\\n... (truncated for preview)' : '');
+    const text = csv.replace(/^﻿/, '');
+    const head = text.split('\r\n').slice(0, 40).join('\r\n');
+    el.textContent = head + (text.split('\r\n').length > 40 ? '\r\n... (truncated for preview)' : '');
   }
 
   // Wrap openExpModal so injection + preview refresh both happen automatically.
@@ -6489,7 +6489,7 @@ document.addEventListener('keydown', e => {
           if (v === null || v === undefined) return '';
           if (typeof v === 'object') v = JSON.stringify(v);
           v = String(v);
-          return /[",\\r\\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+          return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
         };
         const rowCsv = arr => arr.map(esc).join(',');
 
@@ -6535,8 +6535,8 @@ document.addEventListener('keydown', e => {
         }
 
         // Append before the trailing newline
-        csv = csv.replace(/\\r?\\n$/, '');
-        csv = csv + '\\r\\n' + sectionLines.join('\\r\\n') + '\\r\\n';
+        csv = csv.replace(/\r?\n$/, '');
+        csv = csv + '\r\n' + sectionLines.join('\r\n') + '\r\n';
       } catch (err) {
         console.error('CSV consent-signals/failed-requests augmentation failed:', err);
       }
