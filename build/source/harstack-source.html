@@ -1251,12 +1251,32 @@ function scanFirstPartyPOSTs(entries, cdpEventIdxs, firstPartyDomain) {
     let payload = null;
     try { payload = JSON.parse(rawBody); } catch {
       // Non-JSON body. Quick raw-text scan for an email pattern as a fallback.
-      const m = rawBody.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
-      if (m) {
-        let host = ''; try { host = new URL(url).hostname; } catch {}
-        results.push({ idx, url, host, path: new URL(url).pathname,
-          findings: [{ path: '(raw body)', type: 'raw email', sample: m[0].replace(/^[^@]+/, '***') }],
-          uuidsFound: [] });
+      // Session replay tools ship proprietary binary/encoded event-stream
+      // protocols (not JSON, not readable text), so an unanchored email regex
+      // run against the raw bytes will occasionally match noise that merely
+      // contains "@" followed by something dot-something -- an encoded
+      // fragment, not a real email. Skip this fallback for known vendors
+      // with that protocol shape; the structured JSON path above still
+      // applies if any of them ever emit real JSON with a suspicious key.
+      const KNOWN_BINARY_PROTOCOL = /clarity\.ms|hotjar\.(com|io)|fullstory\.com|logrocket\.com/;
+      if (!KNOWN_BINARY_PROTOCOL.test(url)) {
+        const m = rawBody.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+        if (m) {
+          let host = ''; try { host = new URL(url).hostname; } catch {}
+          // This branch previously pushed to the first-party bucket
+          // unconditionally, regardless of the request's actual domain --
+          // unlike the structured JSON path below, which classifies by
+          // comparing the registrable domain against firstPartyDomain.
+          // Apply the same check here so a third-party match (or a
+          // first-party one) lands in the correct bucket.
+          const reg = getRegistrableDomain(host);
+          const isFirstParty = !!(firstPartyDomain && reg === firstPartyDomain);
+          const record = { idx, url, host, path: new URL(url).pathname,
+            findings: [{ path: '(raw body)', type: 'raw email', sample: m[0].replace(/^[^@]+/, '***') }],
+            uuidsFound: [], isFirstParty };
+          if (isFirstParty) results.push(record);
+          else thirdPartyResults.push(record);
+        }
       }
       return;
     }
