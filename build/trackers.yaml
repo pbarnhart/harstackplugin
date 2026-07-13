@@ -899,15 +899,16 @@ trackers:
     risk: medium
     regs:
       - US State Privacy
-      - ECPA
     description: >-
       Sentry error and performance monitoring. Captures stack traces, breadcrumbs, request context,
       and any user context the SDK has been configured to attach (user IDs, email, IP). Sentry
       operates as a processor under its standard DPA, but error events can contain arbitrary PII
       pulled from the page state at the moment of error. If the application sets
       Sentry.setUser({email, id}) anywhere, every error transmits that PII to Sentry servers.
-      Replay-mode Sentry sessions capture user interactions similar to session replay tools and carry
-      the same wiretapping exposure category.
+      Sentry also offers an optional Session Replay product that would carry the same CIPA and ECPA
+      wiretapping exposure as other session replay tools if enabled; this capture alone (base error
+      monitoring traffic) does not confirm Session Replay is active, so that exposure is not asserted
+      here.
     action: >-
       Audit the Sentry SDK configuration: confirm sendDefaultPii is false, scrub PII from error
       contexts, and verify whether Sentry Session Replay is enabled. Disclose Sentry by name in your
@@ -975,20 +976,19 @@ trackers:
     risk: medium
     regs:
       - US State Privacy
-      - ECPA
-      - CIPA
     description: >-
-      Datadog Real User Monitoring data ingestion endpoint. Receives full session telemetry including
-      page navigation, user actions, network requests, performance metrics, error stack traces, and
-      (when Session Replay is enabled) DOM recordings of user interactions. Standard DPA processor
-      relationship, but the SDK can capture arbitrary PII from form fields, URLs, and user contexts
-      depending on how it is configured. Session Replay mode carries the same CIPA and ECPA
-      wiretapping exposure as Microsoft Clarity, Hotjar, and FullStory.
+      Datadog Real User Monitoring data ingestion endpoint. Receives session telemetry including page
+      navigation, user actions, network requests, performance metrics, and error stack traces. Standard
+      DPA processor relationship, but the SDK can capture arbitrary PII from form fields, URLs, and user
+      contexts depending on how it is configured. Datadog also offers an optional Session Replay product
+      that records DOM interactions and would carry the same CIPA and ECPA wiretapping exposure as
+      Microsoft Clarity, Hotjar, and FullStory if enabled; this capture alone (base RUM ingestion
+      traffic) does not confirm Session Replay is active, so that exposure is not asserted here.
     action: >-
-      Audit the Datadog RUM SDK configuration: (1) confirm Session Replay is disabled on pages
-      handling financial, health, or credential data; (2) verify defaultPrivacyLevel is mask or
-      mask-user-input, not allow; (3) scrub PII from custom user contexts and global context; (4)
-      disclose Datadog by name in your privacy policy as a sub-processor; (5) confirm DPA terms are
+      Audit the Datadog RUM SDK configuration: (1) confirm whether Session Replay is enabled, and if so,
+      disable it on pages handling financial, health, or credential data and verify defaultPrivacyLevel
+      is mask or mask-user-input, not allow; (2) scrub PII from custom user contexts and global context;
+      (3) disclose Datadog by name in your privacy policy as a sub-processor; (4) confirm DPA terms are
       executed and current.
 
   - pattern: "browser-intake-us5-datadoghq.com"
@@ -998,8 +998,6 @@ trackers:
     risk: medium
     regs:
       - US State Privacy
-      - ECPA
-      - CIPA
     description: >-
       Datadog RUM ingestion endpoint for the US5 region. Same analysis as the global Datadog RUM
       endpoint applies.
@@ -1013,8 +1011,6 @@ trackers:
     risk: medium
     regs:
       - US State Privacy
-      - ECPA
-      - CIPA
     description: >-
       Datadog RUM ingestion endpoint for the US3 region.
     action: >-
@@ -1028,7 +1024,6 @@ trackers:
     regs:
       - US State Privacy
       - GDPR
-      - ECPA
     description: >-
       Datadog RUM ingestion endpoint for the EU1 region. EU region selection has cross-border transfer
       implications: confirm SCCs are in place and data residency requirements are documented.
@@ -2015,15 +2010,14 @@ trackers:
     risk: medium
     regs:
       - US State Privacy
-      - ECPA
-      - CIPA
     description: >-
       Amplitude product analytics platform. Captures event-level user behavior, feature usage, and
       funnel analysis. Standard DPA processor relationship for analytics. Amplitude Session Replay
-      (separate product) captures DOM recordings and carries the same CIPA and ECPA wiretapping
-      exposure as Microsoft Clarity, Hotjar, and FullStory. Amplitude Experiment (the
-      lab/experimentation product) overlaps with Eppo/LaunchDarkly. The various Amplitude subdomains
-      indicate different product modules.
+      (separate product, detected and reg-tagged independently when its own endpoint appears in the
+      capture) captures DOM recordings and carries the same CIPA and ECPA wiretapping exposure as
+      Microsoft Clarity, Hotjar, and FullStory; this base analytics endpoint does not confirm Session
+      Replay is active. Amplitude Experiment (the lab/experimentation product) overlaps with
+      Eppo/LaunchDarkly. The various Amplitude subdomains indicate different product modules.
     action: >-
       (1) Identify which Amplitude products are deployed: core analytics, Session Replay, Experiment,
       CDP; (2) for Session Replay, audit privacy masking and verify the deployment scope excludes
@@ -2077,17 +2071,16 @@ trackers:
     risk: medium
     regs:
       - US State Privacy
-      - ECPA
-      - CIPA
     description: >-
       Heap product analytics platform. Distinguishing characteristic is autocapture: by default Heap
       records every user interaction (clicks, form interactions, page views, scrolls) without
       per-event instrumentation. This creates a larger PII surface than instrumented analytics
       platforms because field interactions and click targets often contain sensitive context. Heap
       operates as a processor under its standard DPA. Heap Session Replay (separate product, opt-in)
-      captures DOM recordings and carries the same wiretapping exposure category as Microsoft Clarity,
-      Hotjar, and FullStory. Identity API (heap.identify) ties anonymous sessions to user IDs once
-      known.
+      captures DOM recordings and would carry the same CIPA and ECPA wiretapping exposure as Microsoft
+      Clarity, Hotjar, and FullStory if enabled; this capture alone (base autocapture traffic) does not
+      confirm Session Replay is active, so that exposure is not asserted here. Identity API
+      (heap.identify) ties anonymous sessions to user IDs once known.
     action: >-
       (1) Confirm Heap data masking settings exclude sensitive form fields and credential entry pages;
       (2) determine whether Session Replay is enabled and audit its deployment scope; (3) verify DPA

@@ -992,15 +992,15 @@ const TR = {
   'bat.bing.com':{n:'Microsoft UET',cat:'Advertising',cc:'a',r:'medium',regs:['US State Privacy'],d:'Microsoft Universal Event Tracking for Bing Ads.',a:'Disclose in policy. Verify CMP gating.'},
   'ads.linkedin.com':{n:'LinkedIn Ads',cat:'Advertising',cc:'a',r:'medium',regs:['US State Privacy'],d:'LinkedIn advertising endpoint.',a:'Review policy and CMP configuration.'},
   'analytics.twitter.com':{n:'X (Twitter) Analytics',cat:'Advertising',cc:'a',r:'medium',regs:['US State Privacy'],d:'X/Twitter analytics and advertising endpoint.',a:'Disclose in policy. Verify CMP gating.'},
-  'sentry.io':{n:'Sentry',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy','ECPA'],d:'Sentry error and performance monitoring. Captures stack traces, breadcrumbs, request context, and any user context the SDK has been configured to attach (user IDs, email, IP). Sentry operates as a processor under its standard DPA, but error events can contain arbitrary PII pulled from the page state at the moment of error. If the application sets Sentry.setUser({email, id}) anywhere, every error transmits that PII to Sentry servers. Replay-mode Sentry sessions capture user interactions similar to session replay tools and carry the same wiretapping exposure category.',a:'Audit the Sentry SDK configuration: confirm sendDefaultPii is false, scrub PII from error contexts, and verify whether Sentry Session Replay is enabled. Disclose Sentry by name in your privacy policy as a sub-processor. Set a data retention policy in the Sentry project settings.'},
+  'sentry.io':{n:'Sentry',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy'],d:'Sentry error and performance monitoring. Captures stack traces, breadcrumbs, request context, and any user context the SDK has been configured to attach (user IDs, email, IP). Sentry operates as a processor under its standard DPA, but error events can contain arbitrary PII pulled from the page state at the moment of error. If the application sets Sentry.setUser({email, id}) anywhere, every error transmits that PII to Sentry servers. Sentry also offers an optional Session Replay product that would carry the same CIPA and ECPA wiretapping exposure as other session replay tools if enabled; this capture alone (base error monitoring traffic) does not confirm Session Replay is active, so that exposure is not asserted here.',a:'Audit the Sentry SDK configuration: confirm sendDefaultPii is false, scrub PII from error contexts, and verify whether Sentry Session Replay is enabled. Disclose Sentry by name in your privacy policy as a sub-processor. Set a data retention policy in the Sentry project settings.'},
   'sentry-cdn.com':{n:'Sentry (CDN)',cat:'Error Tracking',cc:'an',r:'low',regs:['US State Privacy'],d:'Sentry SDK loaded from Sentry CDN. Confirms Sentry is deployed.',a:'See Sentry findings above. Audit SDK configuration and PII scrubbing.'},
   'px-cdn.net':{n:'HUMAN Security (PerimeterX)',cat:'Bot Protection',cc:'an',r:'low',regs:['US State Privacy'],d:'HUMAN Security (formerly PerimeterX) bot detection and anti-fraud infrastructure. Collects device fingerprinting, behavioral signals, and challenge interactions. Payloads are encoded; full content is opaque without vendor decoding tools. Bot protection is generally legitimate-interest processing under GDPR and not "sharing" under CPRA, but the data collection is still personal data and must be disclosed.',a:'Disclose HUMAN Security/PerimeterX by name in your privacy policy. Confirm the data processing agreement is in place. Verify the deployment scope (login pages and checkout only is best practice; site-wide is broader exposure).'},
   'px-cloud.net':{n:'HUMAN Security (PerimeterX Cloud)',cat:'Bot Protection',cc:'an',r:'low',regs:['US State Privacy'],d:'HUMAN Security cloud collector endpoint. Receives encoded bot detection signals from the px-cdn client.',a:'See HUMAN Security findings above.'},
   'perimeterx.net':{n:'HUMAN Security (Legacy)',cat:'Bot Protection',cc:'an',r:'low',regs:['US State Privacy'],d:'Legacy PerimeterX domain. HUMAN Security has migrated to px-cdn.net and px-cloud.net.',a:'Confirm migration is complete and update any documentation referencing the legacy domain.'},
-  'browser-intake-datadoghq.com':{n:'Datadog RUM',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy','ECPA','CIPA'],d:'Datadog Real User Monitoring data ingestion endpoint. Receives full session telemetry including page navigation, user actions, network requests, performance metrics, error stack traces, and (when Session Replay is enabled) DOM recordings of user interactions. Standard DPA processor relationship, but the SDK can capture arbitrary PII from form fields, URLs, and user contexts depending on how it is configured. Session Replay mode carries the same CIPA and ECPA wiretapping exposure as Microsoft Clarity, Hotjar, and FullStory.',a:'Audit the Datadog RUM SDK configuration: (1) confirm Session Replay is disabled on pages handling financial, health, or credential data; (2) verify defaultPrivacyLevel is mask or mask-user-input, not allow; (3) scrub PII from custom user contexts and global context; (4) disclose Datadog by name in your privacy policy as a sub-processor; (5) confirm DPA terms are executed and current.'},
-  'browser-intake-us5-datadoghq.com':{n:'Datadog RUM (US5)',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy','ECPA','CIPA'],d:'Datadog RUM ingestion endpoint for the US5 region. Same analysis as the global Datadog RUM endpoint applies.',a:'See Datadog RUM findings.'},
-  'browser-intake-us3-datadoghq.com':{n:'Datadog RUM (US3)',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy','ECPA','CIPA'],d:'Datadog RUM ingestion endpoint for the US3 region.',a:'See Datadog RUM findings.'},
-  'browser-intake-eu1-datadoghq.com':{n:'Datadog RUM (EU1)',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy','GDPR','ECPA'],d:'Datadog RUM ingestion endpoint for the EU1 region. EU region selection has cross-border transfer implications: confirm SCCs are in place and data residency requirements are documented.',a:'See Datadog RUM findings. Confirm EU data residency is intentional and SCCs are in place if EU users are routed here from non-EU regions.'},
+  'browser-intake-datadoghq.com':{n:'Datadog RUM',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy'],d:'Datadog Real User Monitoring data ingestion endpoint. Receives session telemetry including page navigation, user actions, network requests, performance metrics, and error stack traces. Standard DPA processor relationship, but the SDK can capture arbitrary PII from form fields, URLs, and user contexts depending on how it is configured. Datadog also offers an optional Session Replay product that records DOM interactions and would carry the same CIPA and ECPA wiretapping exposure as Microsoft Clarity, Hotjar, and FullStory if enabled; this capture alone (base RUM ingestion traffic) does not confirm Session Replay is active, so that exposure is not asserted here.',a:'Audit the Datadog RUM SDK configuration: (1) confirm whether Session Replay is enabled, and if so, disable it on pages handling financial, health, or credential data and verify defaultPrivacyLevel is mask or mask-user-input, not allow; (2) scrub PII from custom user contexts and global context; (3) disclose Datadog by name in your privacy policy as a sub-processor; (4) confirm DPA terms are executed and current.'},
+  'browser-intake-us5-datadoghq.com':{n:'Datadog RUM (US5)',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy'],d:'Datadog RUM ingestion endpoint for the US5 region. Same analysis as the global Datadog RUM endpoint applies.',a:'See Datadog RUM findings.'},
+  'browser-intake-us3-datadoghq.com':{n:'Datadog RUM (US3)',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy'],d:'Datadog RUM ingestion endpoint for the US3 region.',a:'See Datadog RUM findings.'},
+  'browser-intake-eu1-datadoghq.com':{n:'Datadog RUM (EU1)',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy','GDPR'],d:'Datadog RUM ingestion endpoint for the EU1 region. EU region selection has cross-border transfer implications: confirm SCCs are in place and data residency requirements are documented.',a:'See Datadog RUM findings. Confirm EU data residency is intentional and SCCs are in place if EU users are routed here from non-EU regions.'},
   'datadoghq-browser-agent.com':{n:'Datadog RUM (SDK)',cat:'Error Tracking',cc:'an',r:'low',regs:['US State Privacy'],d:'Datadog browser SDK loader. Confirms Datadog RUM is deployed.',a:'See Datadog RUM findings. Audit SDK configuration.'},
   'userway.org':{n:'UserWay',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy','ADA','ECPA'],d:'UserWay accessibility widget. Loads a JavaScript overlay that modifies page DOM, captures user interaction telemetry, and transmits usage data back to UserWay servers. Marketed as ADA/WCAG compliance, but multiple federal courts have ruled that accessibility overlays of this type do not establish ADA compliance and may themselves create accessibility barriers. The data collection happens regardless of whether the widget is activated by the user. UserWay operates as an independent controller or processor depending on contract terms.',a:'(1) Verify ADA compliance claims independently: overlay widgets are not a substitute for native accessibility remediation and have been treated as ineffective in cases including Murphy v. Eyebobs and others; (2) disclose UserWay by name in your privacy policy; (3) confirm the contractual relationship (processor vs. controller); (4) audit what user interaction data is transmitted; (5) verify CMP gating if non-essential.'},
   'cdn.userway.org':{n:'UserWay (CDN)',cat:'Analytics',cc:'an',r:'low',regs:['US State Privacy','ADA'],d:'UserWay accessibility widget CDN.',a:'See UserWay findings.'},
@@ -1061,11 +1061,11 @@ const TR = {
   'zdassets.com':{n:'Zendesk (Assets)',cat:'Call Tracking',cc:'a',r:'low',regs:['US State Privacy','ECPA','CIPA'],d:'Zendesk static asset CDN. Loads the Zendesk chat widget and other Zendesk JavaScript.',a:'See Zendesk findings.'},
   'cloud.es.io':{n:'Elastic APM (Cloud)',cat:'Error Tracking',cc:'an',r:'medium',regs:['US State Privacy','ECPA'],d:'Elastic Application Performance Monitoring (APM) cloud endpoint. Browser SDK that captures performance traces, errors, network requests, and user interactions. Similar privacy posture to Datadog RUM and Sentry: standard DPA processor relationship, but the SDK can capture arbitrary PII from page state, URLs, and user contexts. The cloud.es.io domain indicates Elastic Cloud hosted deployment; self-hosted Elastic APM uses customer-controlled endpoints.',a:'(1) Audit Elastic APM RUM SDK configuration for PII capture in transaction labels, custom contexts, and user data; (2) confirm DPA terms cover the cloud deployment; (3) verify session sampling is enabled (full-fidelity sessions for every visitor amplify exposure); (4) disclose Elastic APM by name in your privacy policy as a sub-processor.'},
   'elastic.co':{n:'Elastic',cat:'Error Tracking',cc:'an',r:'low',regs:['US State Privacy'],d:'Elastic primary domain.',a:'See Elastic APM findings.'},
-  'amplitude.com':{n:'Amplitude',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy','ECPA','CIPA'],d:'Amplitude product analytics platform. Captures event-level user behavior, feature usage, and funnel analysis. Standard DPA processor relationship for analytics. Amplitude Session Replay (separate product) captures DOM recordings and carries the same CIPA and ECPA wiretapping exposure as Microsoft Clarity, Hotjar, and FullStory. Amplitude Experiment (the lab/experimentation product) overlaps with Eppo/LaunchDarkly. The various Amplitude subdomains indicate different product modules.',a:'(1) Identify which Amplitude products are deployed: core analytics, Session Replay, Experiment, CDP; (2) for Session Replay, audit privacy masking and verify the deployment scope excludes sensitive pages (financial, health, credentials); (3) confirm DPA covers all active products; (4) disclose Amplitude by name in your privacy policy.'},
+  'amplitude.com':{n:'Amplitude',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy'],d:'Amplitude product analytics platform. Captures event-level user behavior, feature usage, and funnel analysis. Standard DPA processor relationship for analytics. Amplitude Session Replay (separate product, detected and reg-tagged independently when its own endpoint appears in the capture) captures DOM recordings and carries the same CIPA and ECPA wiretapping exposure as Microsoft Clarity, Hotjar, and FullStory; this base analytics endpoint does not confirm Session Replay is active. Amplitude Experiment (the lab/experimentation product) overlaps with Eppo/LaunchDarkly. The various Amplitude subdomains indicate different product modules.',a:'(1) Identify which Amplitude products are deployed: core analytics, Session Replay, Experiment, CDP; (2) for Session Replay, audit privacy masking and verify the deployment scope excludes sensitive pages (financial, health, credentials); (3) confirm DPA covers all active products; (4) disclose Amplitude by name in your privacy policy.'},
   'cdn.amplitude.com':{n:'Amplitude (CDN)',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy'],d:'Amplitude SDK CDN.',a:'See Amplitude findings.'},
   'api2.amplitude.com':{n:'Amplitude (Events API)',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy'],d:'Amplitude event ingestion endpoint. Receives user identifiers, event names, and event properties.',a:'See Amplitude findings.'},
   'api.lab.amplitude.com':{n:'Amplitude Experiment',cat:'Experimentation',cc:'an',r:'medium',regs:['US State Privacy'],d:'Amplitude Experiment endpoint for feature flagging and experimentation. Similar privacy posture to LaunchDarkly and Eppo: user-context object sent for variant assignment often includes user ID and account attributes.',a:'(1) Audit user context sent to Amplitude Experiment; (2) confirm DPA covers experimentation product; (3) disclose in privacy policy.'},
-  'heapanalytics.com':{n:'Heap Analytics',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy','ECPA','CIPA'],d:'Heap product analytics platform. Distinguishing characteristic is autocapture: by default Heap records every user interaction (clicks, form interactions, page views, scrolls) without per-event instrumentation. This creates a larger PII surface than instrumented analytics platforms because field interactions and click targets often contain sensitive context. Heap operates as a processor under its standard DPA. Heap Session Replay (separate product, opt-in) captures DOM recordings and carries the same wiretapping exposure category as Microsoft Clarity, Hotjar, and FullStory. Identity API (heap.identify) ties anonymous sessions to user IDs once known.',a:'(1) Confirm Heap data masking settings exclude sensitive form fields and credential entry pages; (2) determine whether Session Replay is enabled and audit its deployment scope; (3) verify DPA covers autocapture data and any optional products; (4) disclose Heap by name in your privacy policy; (5) confirm consent gating in the CMP and verify autocapture suppression for opted-out users.'},
+  'heapanalytics.com':{n:'Heap Analytics',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy'],d:'Heap product analytics platform. Distinguishing characteristic is autocapture: by default Heap records every user interaction (clicks, form interactions, page views, scrolls) without per-event instrumentation. This creates a larger PII surface than instrumented analytics platforms because field interactions and click targets often contain sensitive context. Heap operates as a processor under its standard DPA. Heap Session Replay (separate product, opt-in) captures DOM recordings and would carry the same CIPA and ECPA wiretapping exposure as Microsoft Clarity, Hotjar, and FullStory if enabled; this capture alone (base autocapture traffic) does not confirm Session Replay is active, so that exposure is not asserted here. Identity API (heap.identify) ties anonymous sessions to user IDs once known.',a:'(1) Confirm Heap data masking settings exclude sensitive form fields and credential entry pages; (2) determine whether Session Replay is enabled and audit its deployment scope; (3) verify DPA covers autocapture data and any optional products; (4) disclose Heap by name in your privacy policy; (5) confirm consent gating in the CMP and verify autocapture suppression for opted-out users.'},
   'cdn.heapanalytics.com':{n:'Heap Analytics (CDN)',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy'],d:'Heap Analytics SDK CDN. Confirms Heap is deployed.',a:'See Heap Analytics findings.'},
   'heapanalytics.com/h?':{n:'Heap Analytics (Events)',cat:'Analytics',cc:'an',r:'medium',regs:['US State Privacy','ECPA'],d:'Heap event collection endpoint. Receives autocapture event stream from the browser including user properties and event properties.',a:'See Heap Analytics findings. Audit the property payload in the CDP Events tab for PII.'},
   'sr-client-cfg.amplitude.com':{n:'Amplitude Session Replay (Config)',cat:'Session Replay',cc:'s',r:'high',regs:['ECPA','CIPA','US State Privacy'],d:'Amplitude Session Replay configuration endpoint. The "sr" prefix indicates Session Replay is enabled. Session replay tools record user interactions (clicks, scrolls, form interactions, page navigation) in real time. Courts have addressed real-time session recording under both ECPA (Wiretap Act) and CIPA wiretapping/eavesdropping theories. The litigation exposure attaches at the moment of capture, not downstream: deletion frameworks and machine unlearning policies do not address the interception itself. Standing has been a defense win in some cases (notably Popa v. Microsoft at the Ninth Circuit in August 2025, affirmed dismissal for lack of concrete injury), but motions to dismiss continue to be denied in others. Where the session replay vendor processes data for its own commercial purposes (rather than as a service provider under DPA), the transmission also constitutes "sharing" under CPRA. Amplitude Session Replay specifically: combined with Amplitude analytics, sessions can be replayed with full event-level context overlaid, which amplifies the volume of personal information available in a single recording.',a:'(1) Inventory every page where this session replay tool is active; (2) remove from pages where financial data, health information, credentials, or other sensitive inputs are entered; (3) disclose the tool by name in your privacy policy; (4) verify the CMP gates session replay firing on opt-out and GPC; (5) confirm the contractual relationship (processor with executed DPA vs. independent controller) and the data use scope. For Amplitude Session Replay specifically: verify privacy masking is enabled in the project settings (default is unmasked).'},
@@ -1815,12 +1815,18 @@ function computeOutcome(findings, a) {
   // Escalate conditions
   const gpcViolation = findings.some(f => f.type === 'gpc' && f.sev === 'high' && /verified active in HAR/i.test(f.title));
   const rawPIIThirdParty = findings.some(f => f.type === 'thirdparty-pii' && f.sev === 'high');
-  const cmpLate = findings.some(f => f.type === 'cmp' && /after tracking scripts/i.test(f.title));
+  // Only escalate-worthy when severity is high: the finding itself is only
+  // 'high' when GPC was verified active (a real opt-out signal was ignored)
+  // or a pre-CMP tracker independently carries ECPA/CIPA wiretapping
+  // exposure. A 'medium' cmp-late finding means neither applied -- under the
+  // default US opt-out model that is a Needs Review item, not an escalation.
+  const cmpLate = findings.some(f => f.type === 'cmp' && f.sev === 'high' && /after tracking scripts/i.test(f.title));
+  const cmpLateReview = findings.some(f => f.type === 'cmp' && f.sev === 'medium' && /after tracking scripts/i.test(f.title));
   const sessionReplay = findings.some(f => f.type === 'sr');
 
   if (gpcViolation) reasons.push('GPC was verified active in the HAR and sale/sharing trackers still fired.');
   if (rawPIIThirdParty) reasons.push('Raw or hashed PII was transmitted to third-party endpoints.');
-  if (cmpLate) reasons.push('The consent platform loaded after tracking scripts.');
+  if (cmpLate) reasons.push('The consent platform loaded after tracking scripts, and GPC was active or a wiretapping-relevant tracker fired early.');
   if (sessionReplay) reasons.push('Session replay technology is deployed.');
 
   if (reasons.length > 0) {
@@ -1842,6 +1848,7 @@ function computeOutcome(findings, a) {
   if (unknownVendors) reviewReasons.push(`${(a.unidentifiedThirdParties || []).length} unidentified third-party domain${(a.unidentifiedThirdParties || []).length > 1 ? 's' : ''} contacted during capture.`);
   if (longCookies) reviewReasons.push('Cookies exceed the 13-month industry-standard refresh interval.');
   if (noCMP) reviewReasons.push('No recognized consent management platform detected (may be a custom consent layer; confirm with engineering).');
+  if (cmpLateReview) reviewReasons.push('The consent platform loaded after an advertising or session-replay tracker, though no GPC signal or independent wiretapping exposure was observed. Confirm opt-out propagation once GPC or the site\'s own opt-out control is engaged.');
   if (gpcMedium) reviewReasons.push('GPC test conditions could not be verified, or trackers present but GPC not tested.');
   if (cdpAllTrue) reviewReasons.push('CDP routing configuration needs review.');
   if (firstPartyPII) reviewReasons.push('Raw PII transmitted in first-party POST requests; the server-side forwarding question is downstream of this capture.');
@@ -1998,9 +2005,9 @@ const BODY_REGISTRY = [
     patterns: ['window.heap', 'heap.load(', 'heap.appid', 'heap.track('],
     matchAny: false, minMatches: 2,
     trKey: 'cdn.heapanalytics.com',
-    sev: 'medium', cat: 'Analytics', regs: ['ECPA','US State Privacy'],
+    sev: 'medium', cat: 'Analytics', regs: ['US State Privacy'],
     confidence: 'likely',
-    note: 'Detected via response body fingerprint. Heap is frequently proxied through first-party CNAME domains.'
+    note: 'Detected via response body fingerprint. Heap is frequently proxied through first-party CNAME domains. Heap Session Replay is a separate opt-in product carrying CIPA/ECPA wiretapping exposure; this fingerprint (base autocapture) does not confirm it is active.'
   },
   // ── Mixpanel ──────────────────────────────────────────────────────────────
   {
@@ -2018,9 +2025,9 @@ const BODY_REGISTRY = [
     patterns: ['window.amplitude', 'amplitude.getInstance(', 'amplitude.init(', 'amplitude.logEvent('],
     matchAny: false, minMatches: 2,
     trKey: null,
-    sev: 'medium', cat: 'Analytics', regs: ['ECPA','US State Privacy'],
+    sev: 'medium', cat: 'Analytics', regs: ['US State Privacy'],
     confidence: 'likely',
-    note: 'Detected via response body fingerprint. Amplitude collects detailed behavioral event streams. Common in SaaS products and frequently CNAME-proxied.'
+    note: 'Detected via response body fingerprint. Amplitude collects detailed behavioral event streams. Common in SaaS products and frequently CNAME-proxied. Amplitude Session Replay is a separate product carrying CIPA/ECPA wiretapping exposure; this fingerprint (base event analytics) does not confirm it is active.'
   },
   // ── FullStory ─────────────────────────────────────────────────────────────
   {
@@ -2183,9 +2190,9 @@ const BODY_REGISTRY = [
     patterns: ['window.DD_RUM', 'datadogRum.init(', 'DD_RUM.init(', 'datadog-rum'],
     matchAny: false, minMatches: 2,
     trKey: 'browser-intake-datadoghq.com',
-    sev: 'medium', cat: 'Analytics', regs: ['ECPA','US State Privacy'],
+    sev: 'medium', cat: 'Analytics', regs: ['US State Privacy'],
     confidence: 'likely',
-    note: 'Detected via response body fingerprint. Datadog Real User Monitoring collects performance metrics and user session data. Frequently loaded via CNAME proxy to bypass blockers in enterprise environments.'
+    note: 'Detected via response body fingerprint. Datadog Real User Monitoring collects performance metrics and user session data. Frequently loaded via CNAME proxy to bypass blockers in enterprise environments. Datadog also offers an optional Session Replay product carrying CIPA/ECPA wiretapping exposure; this fingerprint alone does not confirm it is active.'
   },
   // Mouseflow
   {
@@ -2522,7 +2529,7 @@ function buildConsentTimelineData(entries, trackers, cmpFirst) {
   const events = [...trackers.values()]
     .filter(t => typeof t.order === 'number' && t.order >= 0 && t.order < entries.length)
     .map(t => ({
-      order: t.order, name: t.n, category: t.cat, risk: t.r,
+      order: t.order, name: t.n, category: t.cat, risk: t.r, regs: t.regs || [], cc: t.cc,
       kind: t.cc === 'c' ? 'cmp' : 'tracker',
       offset_ms: offsetOf(t.order),
     }))
@@ -2899,11 +2906,48 @@ function analyzeHAR(h, bizProfile, liveCtx) {
     findings.push({type:'tracker',title:`${t.n} detected`,sev:t.r,regs:t.regs,plain:t.d,action:t.a,status:t.status,cat:t.cat,loadedBy:t.loadedBy||null});
   });
 
+  // Consent timeline: per-tracker chronology relative to the CMP. Computed
+  // here (before the CMP finding below) so its preCmp data -- which trackers
+  // fired early, and whether any of them carry independent wiretapping
+  // exposure -- can inform the CMP-late severity, not just its existence.
+  const consentTimeline = buildConsentTimelineData(entries, trackers, cmpFirst);
+  const preCmpWiretapRelevant = consentTimeline.preCmp.some(ev => ev.regs.includes('ECPA') || ev.regs.includes('CIPA'));
+  // Advertising (cc 'a') and Session Replay (cc 's') are the categories that
+  // actually feed CCPA/CPRA "sale/sharing" or wiretapping exposure elsewhere
+  // in this tool (see the sharingTrackers/riskySharing checks). Reuse that
+  // same definition here: a non-marketing tracker (neither category) firing
+  // before the CMP is not the kind of load-order gap consent law cares about.
+  const preCmpSharingRelevant = consentTimeline.preCmp.some(ev => ev.cc === 'a' || ev.cc === 's');
+
   // CMP finding
   if (cmpNames.length > 0) {
     if (trackerFirst!==null && cmpFirst!==null && cmpFirst > trackerFirst) {
       cmpStatus = 'late';
-      findings.push({type:'cmp',title:`CMP detected but loaded after tracking scripts: ${cmpNames.join(', ')}`,sev:'high',regs:['US State Privacy','ECPA'],plain:`${cmpNames.join(', ')} was found in the HAR, but tracking scripts fired before it loaded. A CMP that loads after tracking scripts cannot gate those scripts. Visitors are tracked before any consent decision is possible, regardless of what the banner says.`,action:'Reconfigure your tag manager so the CMP fires as the first script on page load, before any tracking tag. This is a sequencing problem in tag configuration, not a policy problem.'});
+      // US state privacy law defaults to an opt-out model: businesses may
+      // collect and share data by default and are only required to honor an
+      // opt-out once requested (including via a GPC signal). A tracker firing
+      // before a CMP loads is not itself a violation under that model. Three
+      // tiers: (1) GPC was active and ignored, or a pre-CMP tracker carries
+      // independent ECPA/CIPA wiretapping exposure -- high, this is a real
+      // opt-out or wiretapping problem regardless of consent model; (2) a
+      // pre-CMP tracker is advertising or session-replay category (sale/
+      // sharing-relevant) but neither of the above applied -- medium, worth
+      // confirming opt-out propagation before it matters; (3) everything that
+      // fired early is non-marketing (functional, monitoring, support) --
+      // info, load order for these does not carry consent-law weight.
+      const escalateWorthy = gpcVerified || preCmpWiretapRelevant;
+      const sev = escalateWorthy ? 'high' : preCmpSharingRelevant ? 'medium' : 'info';
+      const plain = escalateWorthy
+        ? `${cmpNames.join(', ')} was found in the HAR, but tracking scripts fired before it loaded. A CMP that loads after tracking scripts cannot gate those scripts.${gpcVerified ? ' GPC was verified active in this capture, meaning an opt-out signal was sent and these trackers fired anyway.' : ' At least one tracker that fired early independently carries ECPA/CIPA wiretapping exposure, which is not cured by an opt-out mechanism.'}`
+        : preCmpSharingRelevant
+        ? `${cmpNames.join(', ')} was found in the HAR, but tracking scripts fired before it loaded. Under the default US state privacy opt-out model, this alone is not a violation: businesses may collect and share data by default and are only required to honor an opt-out once requested, including via GPC. No GPC signal was observed in this capture, but at least one of the trackers that fired early is advertising or session-replay category -- the kind of tracker CCPA/CPRA sale/sharing obligations actually apply to. Re-capture with GPC active, or with the site's own opt-out control engaged, to test whether this load-order gap results in an ignored opt-out.`
+        : `${cmpNames.join(', ')} was found in the HAR, but tracking scripts fired before it loaded. Every tracker that fired early is non-marketing (functional, monitoring, or support infrastructure), not an advertising or session-replay category. Under the default US state privacy opt-out model, load order only matters for trackers that fall under sale/sharing or wiretapping exposure -- these do not. No action needed on this specific finding.`;
+      const action = escalateWorthy
+        ? 'Reconfigure your tag manager so the CMP fires as the first script on page load, before any tracking tag. This is a sequencing problem in tag configuration, not a policy problem.'
+        : preCmpSharingRelevant
+        ? 'Confirm whether these trackers fall under your CCPA "sale/sharing" disclosures. If they do, verify GPC and opt-out signals propagate to them once a user opts out -- the load-order gap only becomes a violation once an opt-out is actually ignored. Re-capture with GPC active to test this directly.'
+        : 'No action needed for this finding specifically. If you want a stricter posture, these can still be resequenced behind the CMP, but it is not a compliance requirement given what fired early.';
+      findings.push({type:'cmp',title:`CMP detected but loaded after tracking scripts: ${cmpNames.join(', ')}`,sev,regs:escalateWorthy?['US State Privacy','ECPA']:['US State Privacy'],plain,action});
     } else {
       cmpStatus = 'ok';
       findings.push({type:'cmp',title:`Consent platform detected: ${cmpNames.join(', ')}`,sev:'ok',regs:['US State Privacy'],plain:`${cmpNames.join(', ')} was detected and appears to load before tracking scripts. Load order is necessary but not sufficient. Consent type configuration, GPC detection, and opt-out propagation to ad platforms must also be verified.`,action:'Verify: consent types require affirmative action (not auto-grant); GPC detection is enabled; opt-out flags propagate to Meta (LDU), Google (RDP), and other ad platforms at the event level.'});
@@ -2946,25 +2990,36 @@ function analyzeHAR(h, bizProfile, liveCtx) {
     }
   }
 
-  // Consent timeline: per-tracker chronology relative to the CMP. The
-  // late-CMP finding above states the sequencing problem; this one carries
-  // the evidence: which trackers, at what offsets, how far ahead of the CMP.
-  const consentTimeline = buildConsentTimelineData(entries, trackers, cmpFirst);
+  // Consent timeline finding: the late-CMP finding above states the
+  // sequencing problem (and, per the opt-out-model logic there, whether it
+  // is escalate-worthy); this one carries the per-tracker evidence.
   if (cmpNames.length > 0 && consentTimeline.preCmp.length > 0) {
-    const worst = consentTimeline.preCmp.some(ev => ev.risk === 'high') ? 'high' : 'medium';
+    const escalateWorthy = gpcVerified || preCmpWiretapRelevant;
+    const worst = escalateWorthy ? 'high' : preCmpSharingRelevant ? 'medium' : 'info';
     const fmtOff = ms => (ms === null) ? null : `+${(ms/1000).toFixed(2)}s`;
     const lines = consentTimeline.preCmp.map(ev => {
       const off = fmtOff(ev.offset_ms);
       return `${ev.name}${off ? ` at ${off}` : ` (request ${ev.order + 1})`}`;
     });
     const cmpAt = fmtOff(consentTimeline.cmpOffset) || `request ${cmpFirst + 1}`;
+    const plainTail = escalateWorthy
+      ? (gpcVerified
+          ? ' GPC was verified active in this capture, meaning an opt-out signal was sent and these trackers fired anyway -- that is what makes this a violation, not the load order by itself.'
+          : ' At least one of these trackers independently carries ECPA/CIPA wiretapping exposure, which an opt-out mechanism does not cure.')
+      : preCmpSharingRelevant
+      ? ' No GPC signal was observed, but at least one tracker is advertising or session-replay category -- the kind CCPA/CPRA sale/sharing obligations apply to. Under the default US opt-out model this load order alone is not yet a violation. Re-capture with GPC active, or with the site\'s own opt-out control engaged, to test whether opt-outs actually propagate to these trackers.'
+      : ' Every tracker here is non-marketing (functional, monitoring, or support infrastructure), not advertising or session-replay category, so this load order does not carry consent-law weight under the default US opt-out model.';
     findings.push({
       type: 'consent_timeline',
       title: `Consent timeline: ${consentTimeline.preCmp.length} tracker${consentTimeline.preCmp.length > 1 ? 's' : ''} fired before the consent platform loaded`,
       sev: worst,
-      regs: ['US State Privacy','ECPA','CIPA'],
-      plain: `The capture timeline shows these trackers contacting their endpoints before the consent platform (${cmpNames.join(', ')}, first seen at ${cmpAt}) had loaded: ${lines.join('; ')}. Offsets are measured from the first request in the capture. A consent decision cannot gate a request that has already left the browser, so whatever the banner later records, these requests were made without it. This is the per-tracker evidence behind the load-order finding, suitable for a remediation ticket.`,
-      action: 'For each listed tracker, identify the firing mechanism (tag manager trigger, hardcoded script tag, or injection by another vendor; see the loaded-by attribution on each tracker finding where available) and re-sequence it behind the consent platform signal. Re-capture afterward and confirm the timeline shows the CMP first.',
+      regs: escalateWorthy ? ['US State Privacy','ECPA','CIPA'] : ['US State Privacy'],
+      plain: `The capture timeline shows these trackers contacting their endpoints before the consent platform (${cmpNames.join(', ')}, first seen at ${cmpAt}) had loaded: ${lines.join('; ')}. Offsets are measured from the first request in the capture.${plainTail}`,
+      action: escalateWorthy
+        ? 'For each listed tracker, identify the firing mechanism (tag manager trigger, hardcoded script tag, or injection by another vendor; see the loaded-by attribution on each tracker finding where available) and re-sequence it behind the consent platform signal, or confirm it honors GPC directly. Re-capture afterward and confirm the timeline shows the CMP first or that GPC is honored.'
+        : preCmpSharingRelevant
+        ? 'Confirm whether these trackers fall under your CCPA "sale/sharing" disclosures, and if so, verify opt-out and GPC signals propagate to them. Re-capture with GPC active to test directly.'
+        : 'No action needed for this finding specifically.',
       timeline: consentTimeline.preCmp,
     });
   }
