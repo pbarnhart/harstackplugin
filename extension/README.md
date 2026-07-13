@@ -179,6 +179,12 @@ Every export carries the attribution stamp: report footer, analysis JSON
 (`_meta.generated_by`), CSV (`generated_by` row), HAR (`creator`), and the AI
 prompt block.
 
+v4.0 — CMP load-order severity now reflects the US opt-out model: escalates
+only when GPC was active or a pre-CMP tracker carries independent ECPA/CIPA
+exposure, drops to Needs Review for other sale/sharing-relevant trackers,
+and to info for non-marketing trackers firing before the CMP. Corrected
+Datadog RUM, Sentry, Amplitude, and Heap Analytics to stop unconditionally
+claiming ECPA/CIPA exposure from an optional session-replay add-on.
 v0.3.1 — engineer view toggle (hides legal citations, confidence levels, and
 owner routing; shows HTTP status per finding), CNAME-deployed CDP detection
 no longer guesses a vendor name from payload shape alone.

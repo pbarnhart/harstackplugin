@@ -154,7 +154,7 @@ async function analyze() {
   const har = {
     log: {
       version: "1.2",
-      creator: { name: "HARstack Extension (harstack.com)", version: "0.3.1", comment: attribution() },
+      creator: { name: "HARstack Extension (harstack.com)", version: "4.0", comment: attribution() },
       pages: [{ startedDateTime: new Date().toISOString(), id: "page_1", title: ctx.href || ctx.host || "", pageTimings: {} }],
       entries: filled
     }

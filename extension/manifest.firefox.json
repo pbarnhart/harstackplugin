@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HARstack \u2014 Privacy Stack Auditor",
-  "version": "0.3.1",
+  "version": "4.0",
   "description": "Audit a page's privacy and martech stack from its own network traffic. Local only. Zero permissions, no background tracking.",
   "devtools_page": "devtools.html",
   "permissions": [],
