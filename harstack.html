@@ -1646,8 +1646,36 @@ function scanFirstPartyPOSTs(entries, cdpEventIdxs, firstPartyDomain) {
         return;
       }
       if (typeof obj === 'object') {
+        // CDP identity-graph schemas (mParticle, and similar "identity map"
+        // designs) don't name PII fields "email"/"phone" at all -- they store
+        // hashed identifiers under a generic identity-type key (e.g.
+        // known_identities.other, user_identities.other, or a sibling
+        // identity/identity_type pair inside a user_identity_change event).
+        // The semantic type comes from the identity_type value, not the
+        // field name, so the key-name regexes above never fire on these.
+        const mparticleLabel = (identityType) => {
+          const it = (identityType || '').toLowerCase();
+          if (it === 'email') return 'email';
+          if (/^(mobile_number|phone_number_?[23]?)$/.test(it)) return 'phone';
+          return `identifier (mParticle: ${identityType})`;
+        };
+        if (typeof obj.identity === 'string' && typeof obj.identity_type === 'string') {
+          const idVal = obj.identity;
+          const label = mparticleLabel(obj.identity_type);
+          if (looksHashed(idVal)) hashedFindings.push({ path: path + '.identity', type: `hashed ${label}`, sample: idVal.slice(0,8)+'…' });
+          else if (looksRawEmail(idVal)) findings.push({ path: path + '.identity', type: `raw ${label}`, sample: idVal.slice(0,2)+'***'+idVal.slice(idVal.indexOf('@')) });
+        }
         Object.entries(obj).forEach(([k, v]) => {
           const newPath = path ? `${path}.${k}` : k;
+          if (/^(known_identities|user_identities)$/i.test(k) && v && typeof v === 'object' && !Array.isArray(v)) {
+            Object.entries(v).forEach(([identityType, idVal]) => {
+              if (typeof idVal !== 'string') return;
+              const label = mparticleLabel(identityType);
+              if (looksHashed(idVal)) hashedFindings.push({ path: `${newPath}.${identityType}`, type: `hashed ${label}`, sample: idVal.slice(0,8)+'…' });
+              else if (looksRawEmail(idVal)) findings.push({ path: `${newPath}.${identityType}`, type: `raw ${label}`, sample: idVal.slice(0,2)+'***'+idVal.slice(idVal.indexOf('@')) });
+            });
+            return;
+          }
           if (typeof v === 'string') {
             // Hashed PII: ad-platform fields with SHA-256-shaped values.
             // FTC BetterHelp consent order treats hashed identifiers as covered info.
@@ -2929,13 +2957,19 @@ function analyzeHAR(h, bizProfile, liveCtx) {
   if (tpHashedOnly.length > 0) {
     const endpoints = tpHashedOnly.map(r => `${r.host}${r.path}`);
     const hashedTypes = [...new Set(tpHashedOnly.flatMap(r => r.hashedFindings.map(f => f.type)))];
+    const hasIdentityGraphMatch = hashedTypes.some(t => /identifier \(/.test(t));
+    const shapeNote = hasIdentityGraphMatch
+      ? ' The hashes are SHA-256-shaped values, either in fields named email, auto_email, eb_email, phone, fn, ln, em, pn, or similar (standard advertising-platform advanced-matching field names), or under a generic identity-map key (known_identities, user_identities, or an identity/identity_type pair) used by CDP identity-graph schemas such as mParticle, where the semantic type comes from a sibling identity_type value rather than the field name itself.'
+      : ' The hashes are SHA-256-shaped values in fields named email, auto_email, eb_email, phone, fn, ln, em, pn, or similar. Standard advertising-platform advanced-matching field names.';
     findings.push({
       type:'thirdparty-pii',
       title:`Hashed PII transmitted directly to third-party endpoints: ${endpoints.length} request${endpoints.length>1?'s':''}`,
       sev:'high',
       regs:['US State Privacy','ECPA'],
-      plain:`${endpoints.length} POST request${endpoints.length>1?'s':''} to third-party domains transmit hashed contact identifiers (${hashedTypes.join(', ')}) in the payload: ${endpoints.join('; ')}. The hashes are SHA-256-shaped values in fields named email, auto_email, eb_email, phone, fn, ln, em, pn, or similar. Standard advertising-platform advanced-matching field names. The FTC's BetterHelp consent order (FTC File No. 2023-169, Docket C-4796, final order July 14, 2023) established that hashing fails to protect privacy when the receiving party can un-hash the data. Under most US state privacy laws, transmission of hashed identifying information to a third-party advertising platform constitutes "sharing," "sale," or "targeted advertising" depending on the jurisdiction's terminology.`,
-      action:'(1) Identify which form fields drive these hashed values (Meta Advanced Matching, Google Enhanced Conversions, TikTok Advanced Matching, LinkedIn Enhanced Conversions) and on which pages; (2) suppress these transmissions on CCPA opt-out and GPC, alongside the underlying tracker pixel; (3) confirm DPA terms cover hashed-PII transmission for matching purposes; (4) disclose advanced-matching practices specifically in your privacy policy by destination. Example phrasing: "we share hashed email and phone identifiers with Meta, Google, and TikTok for advertising attribution."'
+      plain:`${endpoints.length} POST request${endpoints.length>1?'s':''} to third-party domains transmit hashed contact identifiers (${hashedTypes.join(', ')}) in the payload: ${endpoints.join('; ')}.${shapeNote} The FTC's BetterHelp consent order (FTC File No. 2023-169, Docket C-4796, final order July 14, 2023) established that hashing fails to protect privacy when the receiving party can un-hash the data. Under most US state privacy laws, transmission of hashed identifying information to a third-party advertising platform constitutes "sharing," "sale," or "targeted advertising" depending on the jurisdiction's terminology.`,
+      action: hasIdentityGraphMatch
+        ? '(1) Identify which form fields drive these hashed values (Meta Advanced Matching, Google Enhanced Conversions, TikTok Advanced Matching, LinkedIn Enhanced Conversions) and, for CDP identity-graph matches, confirm what the site\'s own identity-type configuration maps that generic identity slot to (often email); (2) suppress these transmissions on CCPA opt-out and GPC, alongside the underlying tracker pixel or CDP integration; (3) confirm DPA terms cover hashed-PII transmission for matching purposes; (4) disclose advanced-matching and CDP identity-resolution practices specifically in your privacy policy by destination.'
+        : '(1) Identify which form fields drive these hashed values (Meta Advanced Matching, Google Enhanced Conversions, TikTok Advanced Matching, LinkedIn Enhanced Conversions) and on which pages; (2) suppress these transmissions on CCPA opt-out and GPC, alongside the underlying tracker pixel; (3) confirm DPA terms cover hashed-PII transmission for matching purposes; (4) disclose advanced-matching practices specifically in your privacy policy by destination. Example phrasing: "we share hashed email and phone identifiers with Meta, Google, and TikTok for advertising attribution."'
     });
   }
 
