@@ -2576,15 +2576,69 @@ function scanFirstPartyPOSTs(entries, cdpEventIdxs, firstPartyDomain) {
   const looksRawName  = s => typeof s === 'string' && /^[a-zA-Z][a-zA-Z\s'-]{0,80}$/.test(s) && s.length >= 2 && !looksHashed(s);
   const isUuid        = s => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
+  // Shared key-name classifiers, used both for JSON body keys and for URL
+  // query-string parameter names (after stripping a known prefix -- see
+  // scanQueryParams below). Centralized so the two paths can't drift.
+  const isHashedEmailKey = k => /^(email|auto_email|eb_email|hashed_email|em|hashed_em)$/i.test(k);
+  const isHashedPhoneKey = k => /^(phone|phone_?number|auto_phone|auto_phone_?number|eb_phone|eb_phone_?number|hashed_phone|pn|hashed_pn)$/i.test(k);
+  const isHashedNameKey  = k => /^(firstname|first_name|firstName|lastname|last_name|lastName|hashed_first|hashed_last|fn|ln)$/i.test(k);
+
+  // Analytics/ad-platform beacons frequently carry the entire event --
+  // including hashed user-identifying properties -- as URL query parameters
+  // rather than a request body. GA4's Measurement Protocol is the common
+  // case: gtag sends "POST" to /g/collect with an EMPTY body and everything
+  // in the query string, using up.<name> (user property) and ep.<name>
+  // (event parameter) prefixes. A scanner that only reads postData.text
+  // never sees this at all. Scan query params for every entry, regardless
+  // of method or whether a body is present.
+  const scanQueryParams = (url) => {
+    const findings = [], hashedFindings = [];
+    let u; try { u = new URL(url); } catch { return { findings, hashedFindings }; }
+    u.searchParams.forEach((v, k) => {
+      if (typeof v !== 'string' || !v) return;
+      const bareKey = k.replace(/^(up|ep)\./i, '');
+      if ((isHashedEmailKey(bareKey) || isHashedPhoneKey(bareKey) || isHashedNameKey(bareKey)) && looksHashed(v)) {
+        const label = isHashedEmailKey(bareKey) ? 'hashed email' : isHashedPhoneKey(bareKey) ? 'hashed phone' : 'hashed name';
+        hashedFindings.push({ path: `query.${k}`, type: label, sample: v.slice(0,8)+'…' });
+      } else if (/^email$/i.test(bareKey) && looksRawEmail(v)) {
+        findings.push({ path: `query.${k}`, type: 'raw email', sample: v.slice(0,2)+'***'+v.slice(v.indexOf('@')) });
+      } else if (/^(phone|phone_?number)$/i.test(bareKey) && looksRawPhone(v)) {
+        findings.push({ path: `query.${k}`, type: 'raw phone', sample: '+1**********' });
+      } else if (looksRawEmail(v)) {
+        findings.push({ path: `query.${k}`, type: 'raw email (value match)', sample: v.slice(0,2)+'***'+v.slice(v.indexOf('@')) });
+      }
+    });
+    return { findings, hashedFindings };
+  };
+
   entries.forEach((entry, idx) => {
     if (isCdpIdx.has(idx)) return;
     const url = entry.request?.url || '';
     // Skip known performance monitoring and infrastructure endpoints
     if (/debugbear\.com|speedcurve\.com|nr-data\.net/.test(url)) return;
-    if ((entry.request?.method || '') !== 'POST') return;
+
+    const findings = [];
+    const hashedFindings = [];
+    const uuidsFound = [];
+    const fromQuery = scanQueryParams(url);
+    findings.push(...fromQuery.findings);
+    hashedFindings.push(...fromQuery.hashedFindings);
+
+    const finish = (opName) => {
+      if (findings.length === 0 && hashedFindings.length === 0 && uuidsFound.length === 0) return;
+      let host = '', path = '';
+      try { const u = new URL(url); host = u.hostname; path = u.pathname; } catch {}
+      const reg = getRegistrableDomain(host);
+      const isFirstParty = !!(firstPartyDomain && reg === firstPartyDomain);
+      const record = { idx, url, host, path, opName: opName || null, findings, hashedFindings, uuidsFound, isFirstParty };
+      if (isFirstParty) results.push(record);
+      else thirdPartyResults.push(record);
+    };
+
+    if ((entry.request?.method || '') !== 'POST') { finish(); return; }
 
     const rawBody = entry.request?.postData?.text;
-    if (!rawBody) return;
+    if (!rawBody) { finish(); return; }
     let payload = null;
     try { payload = JSON.parse(rawBody); } catch {
       // Non-JSON body. Quick raw-text scan for an email pattern as a fallback.
@@ -2598,29 +2652,12 @@ function scanFirstPartyPOSTs(entries, cdpEventIdxs, firstPartyDomain) {
       const KNOWN_BINARY_PROTOCOL = /clarity\.ms|hotjar\.(com|io)|fullstory\.com|logrocket\.com/;
       if (!KNOWN_BINARY_PROTOCOL.test(url)) {
         const m = rawBody.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
-        if (m) {
-          let host = ''; try { host = new URL(url).hostname; } catch {}
-          // This branch previously pushed to the first-party bucket
-          // unconditionally, regardless of the request's actual domain --
-          // unlike the structured JSON path below, which classifies by
-          // comparing the registrable domain against firstPartyDomain.
-          // Apply the same check here so a third-party match (or a
-          // first-party one) lands in the correct bucket.
-          const reg = getRegistrableDomain(host);
-          const isFirstParty = !!(firstPartyDomain && reg === firstPartyDomain);
-          const record = { idx, url, host, path: new URL(url).pathname,
-            findings: [{ path: '(raw body)', type: 'raw email', sample: m[0].replace(/^[^@]+/, '***') }],
-            uuidsFound: [], isFirstParty };
-          if (isFirstParty) results.push(record);
-          else thirdPartyResults.push(record);
-        }
+        if (m) findings.push({ path: '(raw body)', type: 'raw email', sample: m[0].replace(/^[^@]+/, '***') });
       }
+      finish();
       return;
     }
 
-    const findings = [];
-    const hashedFindings = [];
-    const uuidsFound = [];
     const walk = (obj, path = '', depth = 0) => {
       if (depth > 10 || obj == null) return;
       if (typeof obj === 'string') {
@@ -2675,11 +2712,8 @@ function scanFirstPartyPOSTs(entries, cdpEventIdxs, firstPartyDomain) {
           if (typeof v === 'string') {
             // Hashed PII: ad-platform fields with SHA-256-shaped values.
             // FTC BetterHelp consent order treats hashed identifiers as covered info.
-            const isHashedEmailKey = /^(email|auto_email|eb_email|hashed_email|em|hashed_em)$/i.test(k);
-            const isHashedPhoneKey = /^(phone|phone_?number|auto_phone|auto_phone_?number|eb_phone|eb_phone_?number|hashed_phone|pn|hashed_pn)$/i.test(k);
-            const isHashedNameKey  = /^(firstname|first_name|firstName|lastname|last_name|lastName|hashed_first|hashed_last|fn|ln)$/i.test(k);
-            if ((isHashedEmailKey || isHashedPhoneKey || isHashedNameKey) && looksHashed(v)) {
-              const label = isHashedEmailKey ? 'hashed email' : isHashedPhoneKey ? 'hashed phone' : 'hashed name';
+            if ((isHashedEmailKey(k) || isHashedPhoneKey(k) || isHashedNameKey(k)) && looksHashed(v)) {
+              const label = isHashedEmailKey(k) ? 'hashed email' : isHashedPhoneKey(k) ? 'hashed phone' : 'hashed name';
               hashedFindings.push({ path: newPath, type: label, sample: v.slice(0,8)+'…' });
               return;
             }
@@ -2718,16 +2752,7 @@ function scanFirstPartyPOSTs(entries, cdpEventIdxs, firstPartyDomain) {
     if (payload && typeof payload === 'object') {
       opName = payload.operationName || (Array.isArray(payload) ? payload[0]?.operationName : null);
     }
-
-    if (findings.length > 0 || hashedFindings.length > 0 || uuidsFound.length > 0) {
-      let host = '', path = '';
-      try { const u = new URL(url); host = u.hostname; path = u.pathname; } catch {}
-      const reg = getRegistrableDomain(host);
-      const isFirstParty = !!(firstPartyDomain && reg === firstPartyDomain);
-      const record = { idx, url, host, path, opName, findings, hashedFindings, uuidsFound, isFirstParty };
-      if (isFirstParty) results.push(record);
-      else thirdPartyResults.push(record);
-    }
+    finish(opName);
   });
   return { firstParty: results, thirdParty: thirdPartyResults };
 }
@@ -2914,7 +2939,7 @@ function computeOutcome(findings, a) {
   if (cmpLateReview) reviewReasons.push('The consent platform loaded after an advertising or session-replay tracker, though no GPC signal or independent wiretapping exposure was observed. Confirm opt-out propagation once GPC or the site\'s own opt-out control is engaged.');
   if (gpcMedium) reviewReasons.push('GPC test conditions could not be verified, or trackers present but GPC not tested.');
   if (cdpAllTrue) reviewReasons.push('CDP routing configuration needs review.');
-  if (firstPartyPII) reviewReasons.push('Raw PII transmitted in first-party POST requests; the server-side forwarding question is downstream of this capture.');
+  if (firstPartyPII) reviewReasons.push('Raw PII transmitted in first-party requests; the server-side forwarding question is downstream of this capture.');
   if (opRelated) reviewReasons.push('Operator-related domains under the same brand stem detected.');
 
   if (reviewReasons.length > 0) {
@@ -3927,10 +3952,10 @@ function analyzeHAR(h, bizProfile, liveCtx) {
     const piiFieldTypes = [...new Set(firstPartyPIIWithFields.flatMap(r => r.findings.map(f => f.type)))];
     findings.push({
       type:'firstparty-pii',
-      title:`Raw PII transmitted in first-party POST: ${endpoints.length} endpoint${endpoints.length>1?'s':''}`,
+      title:`Raw PII transmitted in first-party requests: ${endpoints.length} endpoint${endpoints.length>1?'s':''}`,
       sev:'high',
       regs:['US State Privacy','ECPA','GLBA'],
-      plain:`${endpoints.length} first-party POST request${endpoints.length>1?'s':''} contain raw, unhashed PII in the request body: ${endpoints.join('; ')}. Field types detected: ${piiFieldTypes.join(', ')}. Common sources are GraphQL mutations, form submissions, and account-creation REST endpoints. The browser is transmitting this data to the customer's own backend${firstPartyDomain ? ` (${firstPartyDomain})` : ''}, which is not a violation in itself, but creates two compliance obligations: (1) the privacy policy must accurately describe the categories of personal information collected and the purposes of collection at the moment the form is submitted; and (2) if the backend forwards this data server-to-server to third parties (Meta CAPI, Google Ads API, attribution partners, CRM, ESP), the server-side transmission is invisible to this HAR and must be audited separately. Raw email addresses sent before any consent decision (such as a "should this user log in" probe) need particular review. They constitute personal information collection regardless of whether a tracker has fired.`,
+      plain:`${endpoints.length} first-party request${endpoints.length>1?'s':''} contain raw, unhashed PII in the request body or URL query string: ${endpoints.join('; ')}. Field types detected: ${piiFieldTypes.join(', ')}. Common sources are GraphQL mutations, form submissions, account-creation REST endpoints, and analytics beacons that carry event/user properties as query parameters. The browser is transmitting this data to the customer's own backend${firstPartyDomain ? ` (${firstPartyDomain})` : ''}, which is not a violation in itself, but creates two compliance obligations: (1) the privacy policy must accurately describe the categories of personal information collected and the purposes of collection at the moment the form is submitted; and (2) if the backend forwards this data server-to-server to third parties (Meta CAPI, Google Ads API, attribution partners, CRM, ESP), the server-side transmission is invisible to this HAR and must be audited separately. Raw email addresses sent before any consent decision (such as a "should this user log in" probe) need particular review. They constitute personal information collection regardless of whether a tracker has fired.`,
       action:'(1) Review each endpoint in the POST PII tab; (2) confirm the privacy policy discloses collection at the form-submission step; (3) trace each endpoint server-side to identify which third-party services receive this data downstream; (4) verify CCPA opt-out workflows propagate to the server-side destinations, not just browser-side trackers; (5) if any endpoint is hit before affirmative consent (e.g., shouldLogin probes), evaluate whether the lawful basis covers the transmission.'
     });
   }
@@ -3946,7 +3971,7 @@ function analyzeHAR(h, bizProfile, liveCtx) {
       title:`Raw PII transmitted directly to third-party endpoints: ${endpoints.length} request${endpoints.length>1?'s':''}`,
       sev:'high',
       regs:['US State Privacy','ECPA'],
-      plain:`${endpoints.length} non-CDP POST request${endpoints.length>1?'s':''} to third-party domains contain raw or apparently raw PII in the body: ${endpoints.join('; ')}. Field types detected: ${piiFieldTypes.join(', ')}. This is a direct cross-domain PII transmission, distinct from CDP routing and distinct from first-party form submissions to your own backend. The third party receives the data immediately at the moment of the request, before any server-side transformation or hashing pass. Even if some fields are sent hashed (em.<sha256>, pn.<sha256>) alongside, the FTC's BetterHelp consent order (FTC File No. 2023-169, Docket C-4796, final order July 14, 2023) established that hashing fails to protect privacy when the receiving party can un-hash the data. Any unhashed raw values in the same payload eliminate the hashing question entirely.`,
+      plain:`${endpoints.length} non-CDP request${endpoints.length>1?'s':''} to third-party domains contain raw or apparently raw PII in the request body or URL query string: ${endpoints.join('; ')}. Field types detected: ${piiFieldTypes.join(', ')}. This is a direct cross-domain PII transmission, distinct from CDP routing and distinct from first-party form submissions to your own backend. The third party receives the data immediately at the moment of the request, before any server-side transformation or hashing pass. Even if some fields are sent hashed (em.<sha256>, pn.<sha256>) alongside, the FTC's BetterHelp consent order (FTC File No. 2023-169, Docket C-4796, final order July 14, 2023) established that hashing fails to protect privacy when the receiving party can un-hash the data. Any unhashed raw values in the same payload eliminate the hashing question entirely.`,
       action:'(1) Review the POST PII tab (Third-Party Endpoints section); (2) for each endpoint, confirm which vendor receives the data and the contractual relationship (service provider with DPA, independent controller, no relationship); (3) suppress these requests on CCPA opt-out and GPC; (4) if raw PII is being sent where hashed PII is intended, fix the tag configuration immediately. Raw PII transmission to ad platforms is the highest-risk pattern in CIPA and ECPA litigation right now.'
     });
   }
@@ -3962,7 +3987,7 @@ function analyzeHAR(h, bizProfile, liveCtx) {
       title:`Hashed PII transmitted directly to third-party endpoints: ${endpoints.length} request${endpoints.length>1?'s':''}`,
       sev:'high',
       regs:['US State Privacy','ECPA'],
-      plain:`${endpoints.length} POST request${endpoints.length>1?'s':''} to third-party domains transmit hashed contact identifiers (${hashedTypes.join(', ')}) in the payload: ${endpoints.join('; ')}.${shapeNote} The FTC's BetterHelp consent order (FTC File No. 2023-169, Docket C-4796, final order July 14, 2023) established that hashing fails to protect privacy when the receiving party can un-hash the data. Under most US state privacy laws, transmission of hashed identifying information to a third-party advertising platform constitutes "sharing," "sale," or "targeted advertising" depending on the jurisdiction's terminology.`,
+      plain:`${endpoints.length} request${endpoints.length>1?'s':''} to third-party domains transmit hashed contact identifiers (${hashedTypes.join(', ')}) in the request body or URL query string: ${endpoints.join('; ')}.${shapeNote} The FTC's BetterHelp consent order (FTC File No. 2023-169, Docket C-4796, final order July 14, 2023) established that hashing fails to protect privacy when the receiving party can un-hash the data. Under most US state privacy laws, transmission of hashed identifying information to a third-party advertising platform constitutes "sharing," "sale," or "targeted advertising" depending on the jurisdiction's terminology.`,
       action: hasIdentityGraphMatch
         ? '(1) Identify which form fields drive these hashed values (Meta Advanced Matching, Google Enhanced Conversions, TikTok Advanced Matching, LinkedIn Enhanced Conversions) and, for CDP identity-graph matches, confirm what the site\'s own identity-type configuration maps that generic identity slot to (often email); (2) suppress these transmissions on CCPA opt-out and GPC, alongside the underlying tracker pixel or CDP integration; (3) confirm DPA terms cover hashed-PII transmission for matching purposes; (4) disclose advanced-matching and CDP identity-resolution practices specifically in your privacy policy by destination.'
         : '(1) Identify which form fields drive these hashed values (Meta Advanced Matching, Google Enhanced Conversions, TikTok Advanced Matching, LinkedIn Enhanced Conversions) and on which pages; (2) suppress these transmissions on CCPA opt-out and GPC, alongside the underlying tracker pixel; (3) confirm DPA terms cover hashed-PII transmission for matching purposes; (4) disclose advanced-matching practices specifically in your privacy policy by destination. Example phrasing: "we share hashed email and phone identifiers with Meta, Google, and TikTok for advertising attribution."'
