@@ -179,6 +179,19 @@ Every export carries the attribution stamp: report footer, analysis JSON
 (`_meta.generated_by`), CSV (`generated_by` row), HAR (`creator`), and the AI
 prompt block.
 
+v4.1 — Fixed a cookie-attribution collision when two vendors share a
+registrable domain (a root-level cookie no longer gets confidently
+credited to the wrong one). Fixed a false-positive "raw email" match on
+session-replay tools' binary event bodies (Clarity, Hotjar, FullStory,
+LogRocket), and a related bug where any such match was always classified
+first-party regardless of actual domain. Added detection for hashed PII
+in CDP identity-graph schemas (mParticle's known_identities/
+user_identities/identity+identity_type shapes), which name fields
+generically rather than "email"/"phone". Added detection for hashed/raw
+PII carried in URL query strings, not just POST bodies -- catches GA4's
+up./ep.-prefixed user properties and event parameters sent with an empty
+body, and pixel beacons (e.g. Reddit's) that pass PII as query params on
+GET requests.
 v4.0 — CMP load-order severity now reflects the US opt-out model: escalates
 only when GPC was active or a pre-CMP tracker carries independent ECPA/CIPA
 exposure, drops to Needs Review for other sale/sharing-relevant trackers,
